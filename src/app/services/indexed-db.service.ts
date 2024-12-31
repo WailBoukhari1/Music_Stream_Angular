@@ -38,42 +38,36 @@ export class IndexedDBService {
     });
   }
 
-  async addTrack(track: Track, audioFile: File, thumbnail?: File | null, 
-    progressCallback?: (progress: number) => void): Promise<void> {
+  async addTrack(track: Track, audioFile: File, thumbnail?: File | null): Promise<void> {
     const db = await this.db;
     
     return new Promise((resolve, reject) => {
       try {
-        const stores = ['tracks', 'audioFiles'];
-        if (thumbnail) stores.push('thumbnails');
-
-        const transaction = db.transaction(stores, 'readwrite');
+        const transaction = db.transaction(['tracks', 'audioFiles', 'thumbnails'], 'readwrite');
         
         const tracksStore = transaction.objectStore('tracks');
         const audioStore = transaction.objectStore('audioFiles');
-        
-        tracksStore.add(track);
-        audioStore.add({ id: track.id, file: audioFile });
+        const thumbnailStore = transaction.objectStore('thumbnails');
 
+        // Store the audio file
+        audioStore.put({
+          id: track.id,
+          file: audioFile
+        });
+
+        // Store the thumbnail if provided
         if (thumbnail) {
-          const thumbnailStore = transaction.objectStore('thumbnails');
-          thumbnailStore.add({ id: track.id, file: thumbnail });
+          thumbnailStore.put({
+            id: track.id,
+            file: thumbnail
+          });
         }
+
+        // Store the track metadata
+        tracksStore.put(track);
 
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
-
-        // Add progress tracking
-        const chunkSize = 1024 * 1024; // 1MB chunks
-        let uploaded = 0;
-        
-        while (uploaded < audioFile.size) {
-          // ... chunk upload logic ...
-          uploaded += chunkSize;
-          if (progressCallback) {
-            progressCallback((uploaded / audioFile.size) * 100);
-          }
-        }
       } catch (error) {
         reject(error);
       }
@@ -130,6 +124,50 @@ export class IndexedDBService {
         const request = store.get(trackId);
 
         request.onsuccess = () => resolve(request.result.file);
+        request.onerror = () => reject(request.error);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async updateTrackOrders(tracks: Track[]): Promise<void> {
+    const db = await this.db;
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(['tracks'], 'readwrite');
+        const store = transaction.objectStore('tracks');
+        
+        tracks.forEach(track => {
+          store.put(track);
+        });
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async checkDuplicateTrack(title: string, artist: string): Promise<boolean> {
+    const db = await this.db;
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(['tracks'], 'readonly');
+        const store = transaction.objectStore('tracks');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const tracks: Track[] = request.result;
+          const isDuplicate = tracks.some(track => 
+            track.title.toLowerCase() === title.toLowerCase() && 
+            track.artist.toLowerCase() === artist.toLowerCase()
+          );
+          resolve(isDuplicate);
+        };
         request.onerror = () => reject(request.error);
       } catch (error) {
         reject(error);

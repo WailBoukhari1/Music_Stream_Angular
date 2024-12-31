@@ -24,4 +24,14 @@ export const deleteTrack = createAction(
 export const playbackError = createAction(
   '[Track] Playback Error',
   props<{ error: string }>()
+);
+
+export const updateTrackOrders = createAction(
+  '[Track] Update Track Orders',
+  props<{ tracks: Track[] }>()
+);
+
+export const setError = createAction(
+  '[Track] Set Error',
+  props<{ error: string }>()
 ); 

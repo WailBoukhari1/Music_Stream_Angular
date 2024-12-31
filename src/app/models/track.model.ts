@@ -8,4 +8,8 @@ export interface Track {
   category: 'pop' | 'rock' | 'rap' | 'cha3bi' | string;
   thumbnailUrl?: string;
   audioUrl: string;
+  order?: number; // For drag & drop functionality
 }
+
+export type PlayerState = 'playing' | 'paused' | 'buffering' | 'stopped';
+export type LoadingState = 'loading' | 'error' | 'success';

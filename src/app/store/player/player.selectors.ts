@@ -31,4 +31,9 @@ export const selectError = createSelector(
 export const selectLoadingState = createSelector(
   selectPlayerState,
   (state: PlayerState) => state.loadingState
+);
+
+export const selectPlaybackState = createSelector(
+  selectPlayerState,
+  (state) => state.playbackState
 ); 

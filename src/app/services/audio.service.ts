@@ -99,17 +99,15 @@ export class AudioService {
     });
   }
 
-  private calculateDuration(file: File): Promise<number> {
+  async calculateDuration(file: File): Promise<number> {
     return new Promise((resolve) => {
-      const audio = new Audio();
-      const objectUrl = URL.createObjectURL(file);
-      
-      audio.addEventListener('loadedmetadata', () => {
-        resolve(audio.duration);
-        URL.revokeObjectURL(objectUrl);
+      const url = URL.createObjectURL(file);
+      this.audio.src = url;
+      this.audio.addEventListener('loadedmetadata', () => {
+        const duration = this.audio.duration;
+        URL.revokeObjectURL(url);
+        resolve(duration);
       });
-      
-      audio.src = objectUrl;
     });
   }
 

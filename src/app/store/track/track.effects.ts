@@ -26,9 +26,12 @@ export class TrackEffects {
       switchMap(({ track, audioFile, thumbnail }) => 
         from(this.indexedDB.addTrack(track, audioFile, thumbnail)).pipe(
           map(() => TrackActions.loadTracks()),
-          catchError(error => of(TrackActions.loadTracksFailure({ 
-            error: error?.message || 'Failed to add track' 
-          })))
+          catchError(error => {
+            console.error('Error adding track:', error);
+            return of(TrackActions.loadTracksFailure({ 
+              error: error?.message || 'Failed to add track' 
+            }));
+          })
         )
       )
     )

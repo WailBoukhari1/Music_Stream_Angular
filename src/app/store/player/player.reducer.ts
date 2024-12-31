@@ -8,8 +8,8 @@ export interface PlayerState {
   currentTime: number;
   volume: number;
   error: string | null;
-  playerState: 'playing' | 'paused' | 'buffering' | 'stopped';
   loadingState: 'loading' | 'error' | 'success';
+  playbackState: 'playing' | 'paused' | 'buffering' | 'stopped';
 }
 
 export const initialState: PlayerState = {
@@ -18,8 +18,8 @@ export const initialState: PlayerState = {
   currentTime: 0,
   volume: 1,
   error: null,
-  playerState: 'stopped',
-  loadingState: 'success'
+  loadingState: 'success',
+  playbackState: 'stopped'
 };
 
 export const playerReducer = createReducer(
