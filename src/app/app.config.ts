@@ -1,20 +1,35 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { routes } from './app.routes';
 import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { trackReducer } from './store/track/track.reducer';
+import { playerReducer } from './store/player/player.reducer';
+import { TrackEffects } from './store/track/track.effects';
+import { PlayerEffects } from './store/player/player.effects';
+import { localStorageSync } from 'ngrx-store-localstorage';
 
-import { routes } from './app.routes';
-import { musicLibraryReducer } from './store/music-library/music-library.reducer';
-import { MusicLibraryEffects } from './store/music-library/music-library.effects';
+const metaReducers = [
+  localStorageSync({
+    keys: ['player'],
+    rehydrate: true
+  })
+];
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideStore({
-      musicLibrary: musicLibraryReducer
-    }),
-    provideEffects([MusicLibraryEffects]),
+    provideStore(
+      {
+        tracks: trackReducer,
+        player: playerReducer
+      },
+      { metaReducers }
+    ),
+    provideEffects([TrackEffects, PlayerEffects]),
+    provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
     provideAnimations()
   ]
 };

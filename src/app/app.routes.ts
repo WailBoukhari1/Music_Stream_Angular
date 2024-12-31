@@ -1,11 +1,24 @@
 import { Routes } from '@angular/router';
-import { MusicLibraryComponent } from './components/music-library/music-library.component';
-import { MusicPlayerComponent } from './components/music-player/music-player.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'library', pathMatch: 'full' },
-
-  { path: 'library', component: MusicLibraryComponent },
-  { path: 'player', component: MusicPlayerComponent },
-  { path: '**', redirectTo: 'library' },
+  {
+    path: '',
+    redirectTo: 'library',
+    pathMatch: 'full'
+  },
+  {
+    path: 'library',
+    loadComponent: () => import('./components/music-library/music-library.component')
+      .then(m => m.MusicLibraryComponent)
+  },
+  {
+    path: 'upload',
+    loadComponent: () => import('./components/upload-track/upload-track.component')
+      .then(m => m.UploadTrackComponent)
+  },
+  {
+    path: 'player/:id',
+    loadComponent: () => import('./components/audio-player/audio-player.component')
+      .then(m => m.AudioPlayerComponent)
+  }
 ];

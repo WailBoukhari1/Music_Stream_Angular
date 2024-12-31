@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
-import { Track } from '../../models/track.model';
-import * as TrackActions from './track.actions';
+import { Track } from '../models/track.model';
+import * as TrackActions from './track/track.actions';
 
 export interface TrackState {
   tracks: Track[];
@@ -10,7 +10,7 @@ export interface TrackState {
 
 export const initialState: TrackState = {
   tracks: [],
-  loading: true,
+  loading: false,
   error: null
 };
 
