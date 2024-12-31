@@ -2,10 +2,10 @@ export interface Track {
   id: string;
   title: string;
   artist: string;
-  description?: string;
+  description: string;
   addedDate: Date;
   duration: number;
-  category: string;
+  category: 'pop' | 'rock' | 'rap' | 'cha3bi' | string;
   thumbnailUrl?: string;
   audioUrl: string;
 }

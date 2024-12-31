@@ -99,10 +99,25 @@ export class AudioService {
     });
   }
 
+  private calculateDuration(file: File): Promise<number> {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      const objectUrl = URL.createObjectURL(file);
+      
+      audio.addEventListener('loadedmetadata', () => {
+        resolve(audio.duration);
+        URL.revokeObjectURL(objectUrl);
+      });
+      
+      audio.src = objectUrl;
+    });
+  }
+
   async playTrack(track: Track) {
     try {
       await this.initAudioContext();
       const audioFile = await this.indexedDB.getAudioFile(track.id);
+      const duration = await this.calculateDuration(audioFile);
       const audioUrl = URL.createObjectURL(audioFile);
 
       if (this.audio.src) {
@@ -110,11 +125,13 @@ export class AudioService {
       }
 
       this.audio.src = audioUrl;
-      this.store.dispatch(PlayerActions.setTrack({ track }));
+      this.store.dispatch(PlayerActions.setTrack({ 
+        track: { ...track, duration } 
+      }));
       await this.audio.play();
     } catch (error: any) {
       this.store.dispatch(PlayerActions.setError({ 
-        message: `Failed to load track: ${error.message || 'Unknown error'}`
+        message: `Failed to load track: ${error.message}` 
       }));
     }
   }

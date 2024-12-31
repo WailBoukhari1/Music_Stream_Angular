@@ -10,6 +10,7 @@ import { playerReducer } from './store/player/player.reducer';
 import { TrackEffects } from './store/track/track.effects';
 import { PlayerEffects } from './store/player/player.effects';
 import { localStorageSync } from 'ngrx-store-localstorage';
+import { ErrorEffects } from './store/error.effects';
 
 const metaReducers = [
   localStorageSync({
@@ -28,7 +29,7 @@ export const appConfig: ApplicationConfig = {
       },
       { metaReducers }
     ),
-    provideEffects([TrackEffects, PlayerEffects]),
+    provideEffects([TrackEffects, PlayerEffects, ErrorEffects]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
     provideAnimations()
   ]

@@ -100,6 +100,13 @@ import { DurationPipe } from '../../pipes/duration.pipe';
           <!-- Queue items -->
         </div>
       </div>
+
+      <div *ngIf="error$ | async as error" class="error-message">
+        {{ error }}
+      </div>
+      <div *ngIf="(loadingState$ | async) === 'loading'" class="loading-indicator">
+        Loading...
+      </div>
     </div>
   `,
   styles: [`
@@ -240,6 +247,8 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   isPlaying$: Observable<boolean>;
   currentTime$: Observable<number>;
   volume$: Observable<number>;
+  error$: Observable<string | null>;
+  loadingState$: Observable<'loading' | 'error' | 'success'>;
   duration = 0;
   isMiniMode = false;
   previewTime: number | null = null;
@@ -256,6 +265,8 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
     this.isPlaying$ = this.store.select(PlayerSelectors.selectIsPlaying);
     this.currentTime$ = this.store.select(PlayerSelectors.selectCurrentTime);
     this.volume$ = this.store.select(PlayerSelectors.selectVolume);
+    this.error$ = this.store.select(PlayerSelectors.selectError);
+    this.loadingState$ = this.store.select(PlayerSelectors.selectLoadingState);
   }
 
   ngOnInit() {
