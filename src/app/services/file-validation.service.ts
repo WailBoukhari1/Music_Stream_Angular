@@ -5,14 +5,18 @@ import { Injectable } from "@angular/core";
 })
 export class FileValidationService {
   validateAudioFile(file: File): { isValid: boolean; error?: string } {
-    const validTypes = ['audio/mp3', 'audio/wav', 'audio/ogg'];
+    const validTypes = [
+      'audio/mpeg', 'audio/mp3',  // MP3
+      'audio/wav', 'audio/wave',  // WAV
+      'audio/ogg', 'audio/oga'    // OGG
+    ];
     const maxSize = 15 * 1024 * 1024; // 15MB
 
-    if (!validTypes.includes(file.type)) {
-      return { isValid: false, error: 'Only MP3, WAV and OGG files are supported' };
-    }
     if (file.size > maxSize) {
       return { isValid: false, error: 'File size must be less than 15MB' };
+    }
+    if (!validTypes.includes(file.type)) {
+      return { isValid: false, error: 'Only MP3, WAV and OGG files are supported' };
     }
     return { isValid: true };
   }

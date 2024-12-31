@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -10,7 +10,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { Store } from '@ngrx/store';
 import { Track } from '../../models/track.model';
 import * as TrackActions from '../../store/track/track.actions';
+import { FileValidationService } from '../../services/file-validation.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { IndexedDBService } from '../../services/indexed-db.service';
+import { AudioService } from '../../services/audio.service';
 
 @Component({
   selector: 'app-upload-track',
@@ -31,64 +34,79 @@ import { IndexedDBService } from '../../services/indexed-db.service';
       
       <mat-dialog-content>
         <form [formGroup]="uploadForm">
-          <div class="file-inputs">
-            <div class="upload-section">
-              <button mat-stroked-button type="button" (click)="audioInput.click()">
-                <mat-icon>audio_file</mat-icon>
-                {{ selectedFile ? selectedFile.name : 'Choose Audio File' }}
-              </button>
-              <input
-                #audioInput
-                type="file"
-                accept="audio/*"
-                (change)="onFileSelected($event)"
-                style="display: none"
-              >
-            </div>
+          <div class="file-input">
+            <button mat-stroked-button type="button" (click)="audioInput.click()">
+              <mat-icon>audio_file</mat-icon>
+              {{ selectedFile ? selectedFile.name : 'Choose Audio File' }}
+            </button>
+            <input
+              #audioInput
+              type="file"
+              accept="audio/mp3,audio/wav,audio/ogg"
+              (change)="onFileSelected($event)"
+              style="display: none"
+            >
+          </div>
 
-            <div class="upload-section">
-              <button mat-stroked-button type="button" (click)="thumbnailInput.click()">
-                <mat-icon>image</mat-icon>
-                {{ selectedThumbnail ? 'Change Thumbnail' : 'Add Thumbnail' }}
-              </button>
-              <input
-                #thumbnailInput
-                type="file"
-                accept="image/*"
-                (change)="onThumbnailSelected($event)"
-                style="display: none"
-              >
-            </div>
+          <div class="file-input">
+            <button mat-stroked-button type="button" (click)="imageInput.click()">
+              <mat-icon>image</mat-icon>
+              {{ selectedImage ? 'Change Image' : 'Add Cover Image (Optional)' }}
+            </button>
+            <input
+              #imageInput
+              type="file"
+              accept="image/jpeg,image/png"
+              (change)="onImageSelected($event)"
+              style="display: none"
+            >
+          </div>
 
-            <div class="thumbnail-preview" *ngIf="thumbnailPreview">
-              <img [src]="thumbnailPreview" alt="Thumbnail preview">
-            </div>
+          <div class="image-preview" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="Cover preview">
+            <button mat-icon-button color="warn" class="remove-image" (click)="removeImage()">
+              <mat-icon>close</mat-icon>
+            </button>
           </div>
 
           <mat-form-field appearance="outline">
             <mat-label>Title</mat-label>
-            <input matInput formControlName="title" required>
+            <input matInput formControlName="title">
+            <mat-error *ngIf="uploadForm.get('title')?.errors?.['required']">
+              Title is required
+            </mat-error>
+            <mat-error *ngIf="uploadForm.get('title')?.errors?.['maxlength']">
+              Title must be less than 50 characters
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Artist</mat-label>
-            <input matInput formControlName="artist" required>
+            <input matInput formControlName="artist">
+            <mat-error *ngIf="uploadForm.get('artist')?.errors?.['required']">
+              Artist is required
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Description</mat-label>
-            <input matInput formControlName="description" maxlength="200">
+            <textarea matInput formControlName="description" rows="3"></textarea>
+            <mat-error *ngIf="uploadForm.get('description')?.errors?.['maxlength']">
+              Description must be less than 200 characters
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Category</mat-label>
-            <mat-select formControlName="category" required>
+            <mat-select formControlName="category">
               <mat-option value="pop">Pop</mat-option>
               <mat-option value="rock">Rock</mat-option>
-              <mat-option value="jazz">Jazz</mat-option>
-              <mat-option value="classical">Classical</mat-option>
-              <mat-option value="other">Other</mat-option>
+              <mat-option value="rap">Rap</mat-option>
+              <mat-option value="cha3bi">Cha3bi</mat-option>
             </mat-select>
+            <mat-error *ngIf="uploadForm.get('category')?.errors?.['required']">
+              Category is required
+            </mat-error>
           </mat-form-field>
 
           <div *ngIf="isUploading" class="progress-section">
@@ -116,23 +134,35 @@ import { IndexedDBService } from '../../services/indexed-db.service';
       padding: 20px;
     }
 
-    mat-dialog-content {
-      min-width: 400px;
-    }
-
     form {
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
-    .file-inputs {
-      display: grid;
-      gap: 16px;
+    .file-input {
+      margin: 16px 0;
     }
 
-    .upload-section {
-      margin: 16px 0;
+    .image-preview {
+      position: relative;
+      width: 200px;
+      margin: 0 auto;
+    }
+
+    .image-preview img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .remove-image {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     .progress-section {
@@ -144,82 +174,79 @@ import { IndexedDBService } from '../../services/indexed-db.service';
     mat-progress-bar {
       flex: 1;
     }
-
-    .thumbnail-preview {
-      width: 100%;
-      max-width: 200px;
-      margin: 0 auto;
-    }
-
-    .thumbnail-preview img {
-      width: 100%;
-      height: auto;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
   `]
 })
 export class UploadTrackComponent {
-  uploadForm: FormGroup;
+  uploadForm = this.fb.group({
+    title: ['', [Validators.required, Validators.maxLength(50)]],
+    artist: ['', [Validators.required]],
+    description: ['', [Validators.maxLength(200)]],
+    category: ['', [Validators.required]],
+    duration: [0]
+  });
+
   selectedFile: File | null = null;
+  selectedImage: File | null = null;
+  imagePreview: string | null = null;
   isUploading = false;
   uploadProgress = 0;
-  selectedThumbnail: File | null = null;
-  thumbnailPreview: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private store: Store,
+    private fileValidation: FileValidationService,
+    private snackBar: MatSnackBar,
     private indexedDB: IndexedDBService,
-    public dialogRef: MatDialogRef<UploadTrackComponent>
-  ) {
-    this.uploadForm = this.fb.group({
-      title: ['', [
-        Validators.required, 
-        Validators.maxLength(50)
-      ]],
-      description: ['', [
-        Validators.maxLength(200)
-      ]],
-      artist: ['', Validators.required],
-      category: ['', Validators.required]
-    });
-  }
+    public dialogRef: MatDialogRef<UploadTrackComponent>,
+    private audioService: AudioService
+  ) {}
 
-  onFileSelected(event: Event) {
+  async onFileSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      if (file.size > 15 * 1024 * 1024) { // 15MB limit
-        alert('File size must be less than 15MB');
+      const validation = this.fileValidation.validateAudioFile(file);
+      if (!validation.isValid) {
+        this.snackBar.open(validation.error || 'Invalid file', 'Close', {
+          duration: 3000
+        });
         return;
       }
       this.selectedFile = file;
-      if (!this.uploadForm.get('title')?.value) {
-        this.uploadForm.patchValue({
-          title: file.name.replace(/\.[^/.]+$/, "")
-        });
-      }
+      // Calculate duration when file is selected
+      const duration = await this.audioService.calculateDuration(file);
+      this.uploadForm.patchValue({
+        title: file.name.replace(/\.[^/.]+$/, ''),
+        duration: duration
+      });
     }
   }
 
-  onThumbnailSelected(event: Event) {
+  onImageSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        alert('Thumbnail size must be less than 2MB');
+      const validation = this.fileValidation.validateImageFile(file);
+      if (!validation.isValid) {
+        this.snackBar.open(validation.error || 'Invalid image', 'Close', {
+          duration: 3000
+        });
         return;
       }
-      this.selectedThumbnail = file;
-      this.createThumbnailPreview(file);
+      this.selectedImage = file;
+      this.createImagePreview(file);
     }
   }
 
-  private createThumbnailPreview(file: File) {
+  private createImagePreview(file: File) {
     const reader = new FileReader();
     reader.onload = () => {
-      this.thumbnailPreview = reader.result as string;
+      this.imagePreview = reader.result as string;
     };
     reader.readAsDataURL(file);
+  }
+
+  removeImage() {
+    this.selectedImage = null;
+    this.imagePreview = null;
   }
 
   async uploadTrack() {
@@ -227,31 +254,56 @@ export class UploadTrackComponent {
       this.isUploading = true;
       
       try {
+        const title = this.uploadForm.get('title')?.value ?? '';
+        const artist = this.uploadForm.get('artist')?.value ?? '';
+
+        // Check for duplicates
+        const isDuplicate = await this.indexedDB.checkDuplicateTrack(title, artist);
+        if (isDuplicate) {
+          this.snackBar.open(
+            'A track with the same title and artist already exists!', 
+            'Close', 
+            { duration: 5000 }
+          );
+          this.isUploading = false;
+          return;
+        }
+
+        console.log('Starting upload for file:', this.selectedFile);
+
         const track: Track = {
           id: crypto.randomUUID(),
-          title: this.uploadForm.get('title')?.value,
-          artist: this.uploadForm.get('artist')?.value,
+          title: title,
+          artist: artist,
           description: this.uploadForm.get('description')?.value || '',
-          category: this.uploadForm.get('category')?.value,
+          category: this.uploadForm.get('category')?.value || '',
           addedDate: new Date(),
           duration: 0,
-          audioUrl: URL.createObjectURL(this.selectedFile),
-          thumbnailUrl: this.thumbnailPreview || undefined
+          audioUrl: '',
+          thumbnailUrl: this.imagePreview || undefined
         };
 
-        await this.indexedDB.addTrack(track, this.selectedFile, this.selectedThumbnail);
         this.store.dispatch(TrackActions.addTrack({ 
           track, 
-          audioFile: this.selectedFile, 
-          thumbnail: this.selectedThumbnail 
+          audioFile: this.selectedFile,
+          thumbnail: this.selectedImage
         }));
         
         this.dialogRef.close();
+        this.snackBar.open('Track uploaded successfully', 'Close', {
+          duration: 3000
+        });
       } catch (error) {
         console.error('Upload failed:', error);
-        alert('Upload failed. Please try again.');
+        this.snackBar.open('Upload failed. Please try again.', 'Close', {
+          duration: 3000
+        });
       }
       this.isUploading = false;
+    } else {
+      this.snackBar.open('Please fill all required fields and select an audio file', 'Close', {
+        duration: 3000
+      });
     }
   }
 }

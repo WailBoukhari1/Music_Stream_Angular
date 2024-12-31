@@ -5,12 +5,12 @@ import * as TrackActions from './track.actions';
 export interface TrackState {
   tracks: Track[];
   loading: boolean;
-  error: any;
+  error: string | null;
 }
 
 export const initialState: TrackState = {
   tracks: [],
-  loading: true,
+  loading: false,
   error: null
 };
 
@@ -37,5 +37,10 @@ export const trackReducer = createReducer(
   on(TrackActions.deleteTrack, (state, { id }) => ({
     ...state,
     tracks: state.tracks.filter(track => track.id !== id)
+  })),
+  on(TrackActions.setError, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false
   }))
 ); 

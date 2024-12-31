@@ -30,6 +30,10 @@ import { DurationPipe } from '../../pipes/duration.pipe';
           <div class="track-info">
             <h3>{{ track.title }}</h3>
             <p>{{ track.artist }}</p>
+            <p class="duration">
+              {{ currentTime$ | async | duration }} / {{ track.duration | duration }}
+            </p>
+            <p class="status">{{ playbackState$ | async }}</p>
           </div>
         </div>
 
@@ -111,18 +115,18 @@ import { DurationPipe } from '../../pipes/duration.pipe';
   `,
   styles: [`
     .player-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 2rem;
-      background: linear-gradient(to bottom, #282828, #181818);
-      color: white;
-      height: 90px;
       position: fixed;
-      bottom: 0;
+      bottom: 48px; /* Height of footer */
       left: 0;
       right: 0;
+      background: white;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
       z-index: 1000;
+      padding: 1rem;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
     }
 
     .now-playing {
@@ -133,27 +137,32 @@ import { DurationPipe } from '../../pipes/duration.pipe';
     }
 
     .now-playing img {
-      width: 56px;
-      height: 56px;
+      width: 60px;
+      height: 60px;
       border-radius: 4px;
       object-fit: cover;
     }
 
+    .track-info {
+      overflow: hidden;
+    }
+
     .track-info h3 {
       margin: 0;
-      font-size: 0.9rem;
-      color: #fff;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .track-info p {
       margin: 4px 0 0;
-      font-size: 0.8rem;
-      color: #b3b3b3;
+      color: rgba(0,0,0,0.6);
+      font-size: 0.9rem;
     }
 
     .player-controls {
       flex: 1;
-      max-width: 722px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -168,30 +177,17 @@ import { DurationPipe } from '../../pipes/duration.pipe';
 
     .play-button {
       transform: scale(1.2);
-      background: #fff;
-      color: #000;
-    }
-
-    .play-button:hover {
-      transform: scale(1.3);
     }
 
     .playback-bar {
       width: 100%;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 1rem;
     }
 
     .progress-slider {
       flex: 1;
-    }
-
-    .time {
-      font-size: 0.7rem;
-      color: #b3b3b3;
-      min-width: 40px;
-      text-align: center;
     }
 
     .volume-control {
@@ -205,22 +201,10 @@ import { DurationPipe } from '../../pipes/duration.pipe';
       width: 100px;
     }
 
-    ::ng-deep .mat-mdc-slider .mdc-slider__track--active {
-      background-color: #1db954;
-    }
-
-    ::ng-deep .mat-mdc-slider .mdc-slider__thumb {
-      background-color: #fff;
-    }
-
     .empty-player {
       width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #b3b3b3;
-      padding: 1rem;
+      text-align: center;
+      color: rgba(0,0,0,0.6);
     }
 
     .empty-icon {
@@ -230,15 +214,12 @@ import { DurationPipe } from '../../pipes/duration.pipe';
       margin-bottom: 0.5rem;
     }
 
-    .empty-player p {
-      margin: 0;
-      font-size: 1rem;
-    }
-
-    .empty-player small {
-      margin-top: 0.25rem;
+    .duration, .status {
       font-size: 0.8rem;
-      opacity: 0.8;
+      color: rgba(0,0,0,0.6);
+    }
+    .status {
+      text-transform: capitalize;
     }
   `]
 })
@@ -256,6 +237,7 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   showQueue = false;
   private destroy$ = new Subject<void>();
   private isDragging = false;
+  playbackState$ = this.store.select(PlayerSelectors.selectPlaybackState);
 
   constructor(
     private store: Store,

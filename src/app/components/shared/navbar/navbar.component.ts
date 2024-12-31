@@ -4,11 +4,19 @@ import { RouterModule } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
+import { UploadTrackComponent } from '../../upload-track/upload-track.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatToolbarModule, MatButtonModule, MatIconModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule
+  ],
   template: `
     <mat-toolbar color="primary">
       <a mat-button routerLink="/" class="brand">
@@ -23,10 +31,10 @@ import { MatIconModule } from '@angular/material/icon';
           <mat-icon>library_music</mat-icon>
           Library
         </a>
-        <a mat-button routerLink="/upload" routerLinkActive="active">
+        <button mat-button (click)="openUploadDialog()">
           <mat-icon>upload</mat-icon>
           Upload
-        </a>
+        </button>
       </nav>
     </mat-toolbar>
   `,
@@ -54,4 +62,13 @@ import { MatIconModule } from '@angular/material/icon';
     }
   `]
 })
-export class NavbarComponent {} 
+export class NavbarComponent {
+  constructor(private dialog: MatDialog) {}
+
+  openUploadDialog() {
+    this.dialog.open(UploadTrackComponent, {
+      width: '500px',
+      disableClose: true
+    });
+  }
+} 

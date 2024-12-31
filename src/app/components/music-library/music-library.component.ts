@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, combineLatest } from 'rxjs';
+import { Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { Track } from '../../models/track.model';
 import * as TrackActions from '../../store/track/track.actions';
@@ -15,20 +14,22 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { AudioService } from '../../services/audio.service';
+import { combineLatest } from 'rxjs';
+import { DurationPipe } from '../../pipes/duration.pipe';
 
 @Component({
   selector: 'app-music-library',
   standalone: true,
   imports: [
-    CommonModule, 
-    RouterModule,
+    CommonModule,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatIconModule,
     MatCardModule,
-    MatButtonModule
+    MatButtonModule,
+    DurationPipe
   ],
   template: `
     <div class="library-container">
@@ -53,12 +54,15 @@ import { AudioService } from '../../services/audio.service';
 
       <!-- Tracks Grid -->
       <div class="tracks-grid">
-        <mat-card *ngFor="let track of filteredTracks$ | async" class="track-card" (click)="playTrack(track)">
+        <mat-card *ngFor="let track of filteredTracks$ | async" 
+                 class="track-card"
+                 (click)="playTrack(track)">
           <img mat-card-image [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
           
           <mat-card-content>
             <h3>{{ track.title }}</h3>
             <p class="artist">{{ track.artist }}</p>
+            <p class="duration">{{ track.duration | duration }}</p>
             <p class="category">{{ track.category }}</p>
           </mat-card-content>
 
@@ -71,7 +75,6 @@ import { AudioService } from '../../services/audio.service';
   `,
   styles: [`
     .library-container {
-      padding: 2rem;
       max-width: 1200px;
       margin: 0 auto;
     }
@@ -88,21 +91,31 @@ import { AudioService } from '../../services/audio.service';
 
     .tracks-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
     }
 
-    .track-card {
-      transition: transform 0.2s;
+    mat-card {
+      transition: transform 0.2s ease-in-out;
     }
 
-    .track-card:hover {
+    mat-card:hover {
       transform: translateY(-4px);
     }
 
-    mat-card-content h3 {
+    mat-card-content {
+      padding: 1rem;
+    }
+
+    mat-card img {
+      aspect-ratio: 1;
+      object-fit: cover;
+    }
+
+    h3 {
       margin: 0;
       font-size: 1.1rem;
+      font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -110,7 +123,7 @@ import { AudioService } from '../../services/audio.service';
 
     .artist, .category {
       margin: 4px 0;
-      color: rgba(0, 0, 0, 0.6);
+      color: rgba(0,0,0,0.6);
       font-size: 0.9rem;
     }
 
@@ -118,6 +131,8 @@ import { AudioService } from '../../services/audio.service';
       position: absolute;
       top: 8px;
       right: 8px;
+      background: rgba(0,0,0,0.5);
+      color: white;
     }
   `]
 })

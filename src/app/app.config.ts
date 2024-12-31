@@ -9,28 +9,26 @@ import { trackReducer } from './store/track/track.reducer';
 import { playerReducer } from './store/player/player.reducer';
 import { TrackEffects } from './store/track/track.effects';
 import { PlayerEffects } from './store/player/player.effects';
-import { localStorageSync } from 'ngrx-store-localstorage';
 import { ErrorEffects } from './store/error.effects';
-
-const metaReducers = [
-  localStorageSync({
-    keys: ['player'],
-    rehydrate: true
-  })
-];
+import { MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material/dialog';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideStore(
-      {
-        tracks: trackReducer,
-        player: playerReducer
-      },
-      { metaReducers }
-    ),
+    provideStore({
+      tracks: trackReducer,
+      player: playerReducer
+    }),
     provideEffects([TrackEffects, PlayerEffects, ErrorEffects]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
-    provideAnimations()
+    provideAnimations(),
+    {
+      provide: MAT_DIALOG_DEFAULT_OPTIONS,
+      useValue: {
+        hasBackdrop: true,
+        disableClose: false,
+        width: '500px'
+      }
+    }
   ]
 };
