@@ -1,0 +1,99 @@
+    Project context
+"MusicStream" est une application musicale simple basée sur Angular, offrant une expérience basique aux utilisateurs pour écouter et organiser leur musique locale. Pour assurer une gestion efficace des états du lecteur et des tracks, nous adoptons NgRx comme solution de gestion d'état centralisée.
+
+L'objectif principal est de créer une application musicale simple et fonctionnelle avec NgRx, offrant une expérience utilisateur fluide et une architecture maintenable, tout en assurant une gestion efficace des fichiers audio locaux
+
+​
+
+Gestion des tracks :
+Système CRUD complet avec NgRx incluant pour chaque track :
+
+Nom de la chanson
+Nom du chanteur
+Description optionnelle (max 200 caractères)
+Date d'ajout (automatique)
+Durée de la chanson (calculée automatiquement)
+Catégorie musicale (pop, rock, rap, cha3bi, etc.)
+​
+
+Lecteur audio :
+
+Développer les contrôles essentiels (play, pause, next, previous)
+Implémenter le contrôle du volume et de la progression
+Utiliser Web Audio API ou équivalent pertinent
+​
+
+Pages principales requises :
+
+Page Bibliothèque : Liste complète des tracks crées avec la barre de recherche
+Page Track : Affichage détaillé et lecture du track sélectionné
+Autres pages optionnelles selon votre vision du projet
+​
+
+Tâches Principales :
+
+​
+
+Configuration initiale :
+
+Mettre en place la structure de base Angular avec architecture modulaire
+Structurer les composants principaux selon les bonnes pratiques
+Configurer le routing avec lazy loading
+​
+
+Configuration de NgRx :
+Implémenter les modules NgRx (actions, réducteurs, effets, sélecteurs)
+Implémentation d'un système de gestion d'état du lecteur de la manière suivante :
+
+États de base : 'playing', 'paused', 'buffering', 'stopped'
+États de chargement : 'loading', 'error', 'success' Mise en place d'effects pour la gestion asynchrone des erreurs Messages d'erreur UI correspondants aux différents états
+​
+
+Gestion des fichiers audio :
+Stockage dans IndexedDB avec deux tables :
+
+Une table pour les fichiers audio (blobs)
+Une table pour les métadonnées (informations sur les tracks) Limiter la taille des fichiers à 15MB maximum Supporter les formats MP3, WAV et OGG
+​
+
+Validations :
+
+Limites de caractères (titre: 50, description: 200)
+Validation des formats de fichiers (audio et images)
+Gestion des erreurs de upload/stockage
+Autres validations pertinentes
+​
+
+Maquettage avec Figma ou Adobe XD
+
+​
+
+Jira pour la gestion des projets
+
+​
+
+Exigences techniques :
+
+Angular 17
+NgRx pour la gestion d'état
+TypeScript
+RxJS/Observables
+Reactive Forms
+Injection de dépendance
+Routing avec lazy loading
+Bootstrap ou tailwind
+Components, Modules, Service
+Form handling
+Databinding
+Pipes
+​
+
+Bonus :
+
+ajouter pour chaque tracks une image de couverture optionnelle (formats acceptés : png, jpeg)
+Implémenter une barre de progression qui s'affiche lors de upload
+Drag & drop pour l'ordre des tracks dans la page de bibliothèque
+Système de filtres avancés
+Tests unitaires et d'intégration (Jasmine/Karma)
+Travailler avec une API de lyrics
+Configuration Docker
