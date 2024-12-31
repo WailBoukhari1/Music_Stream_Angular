@@ -1,0 +1,29 @@
+<div class="music-player">
+  <mat-card *ngIf="currentTrack$ | async as track">
+    <mat-card-content>
+      <div class="track-info">
+        <h2>{{ track.title }}</h2>
+        <p>{{ track.artist }}</p>
+      </div>
+      
+      <div class="controls">
+        <button mat-icon-button (click)="stopTrack()">
+          <mat-icon>stop</mat-icon>
+        </button>
+        <button mat-fab (click)="pauseTrack()">
+          <mat-icon>pause</mat-icon>
+        </button>
+        <button mat-fab (click)="playTrack()">
+          <mat-icon>play_arrow</mat-icon>
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <div class="no-track" *ngIf="!(currentTrack$ | async)">
+    <p>No track selected</p>
+    <button mat-raised-button color="primary" routerLink="/library">
+      Choose a track
+    </button>
+  </div>
+</div>
