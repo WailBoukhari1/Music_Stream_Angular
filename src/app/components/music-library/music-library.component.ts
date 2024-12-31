@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { Track } from './music-library.model';
+import { MusicLibraryService } from './music-library.service';
 import * as MusicLibraryActions from '../../store/music-library/music-library.actions';
 
 @Component({
@@ -28,7 +29,8 @@ export class MusicLibraryComponent implements OnInit {
 
   constructor(
     private store: Store<any>,
-    private router: Router
+    private router: Router,
+    private musicLibraryService: MusicLibraryService
   ) {}
 
   ngOnInit(): void {
@@ -38,5 +40,25 @@ export class MusicLibraryComponent implements OnInit {
   playTrack(track: Track): void {
     this.store.dispatch(MusicLibraryActions.playTrack({ track }));
     this.router.navigate(['/player']);
+  }
+
+  async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) {
+      const file = input.files[0];
+      const url = URL.createObjectURL(file);
+      
+      const track: Track = {
+        id: Date.now().toString(),
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        artist: 'Unknown Artist',
+        duration: 0,
+        url: url
+      };
+
+      this.musicLibraryService.addTrack(track).subscribe(() => {
+        this.store.dispatch(MusicLibraryActions.loadTracks());
+      });
+    }
   }
 }

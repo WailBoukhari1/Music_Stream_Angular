@@ -1,5 +1,18 @@
 <div class="music-library">
-  <h1>Music Library</h1>
+  <div class="library-header">
+    <h1>Music Library</h1>
+    <input
+      type="file"
+      #fileInput
+      style="display: none"
+      accept="audio/*"
+      (change)="onFileSelected($event)"
+    >
+    <button mat-raised-button color="primary" (click)="fileInput.click()">
+      <mat-icon>add</mat-icon>
+      Add Track
+    </button>
+  </div>
   
   <div class="tracks-container">
     <mat-card *ngFor="let track of tracks$ | async" 
