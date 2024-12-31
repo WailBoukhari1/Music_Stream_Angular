@@ -174,9 +174,14 @@ export class UploadTrackComponent {
     public dialogRef: MatDialogRef<UploadTrackComponent>
   ) {
     this.uploadForm = this.fb.group({
-      title: ['', [Validators.required, Validators.maxLength(50)]],
+      title: ['', [
+        Validators.required, 
+        Validators.maxLength(50)
+      ]],
+      description: ['', [
+        Validators.maxLength(200)
+      ]],
       artist: ['', Validators.required],
-      description: ['', Validators.maxLength(200)],
       category: ['', Validators.required]
     });
   }
@@ -226,6 +231,7 @@ export class UploadTrackComponent {
           id: crypto.randomUUID(),
           title: this.uploadForm.get('title')?.value,
           artist: this.uploadForm.get('artist')?.value,
+          description: this.uploadForm.get('description')?.value || '',
           category: this.uploadForm.get('category')?.value,
           addedDate: new Date(),
           duration: 0,

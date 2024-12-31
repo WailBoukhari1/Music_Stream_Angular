@@ -1,20 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 import { Track } from '../../models/track.model';
 import * as TrackActions from '../../store/track/track.actions';
 import { selectAllTracks } from '../../store/track/track.selectors';
-import { FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { ReactiveFormsModule } from '@angular/forms';
-import { TrackState } from '../../store/track/track.reducer';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
+import { MatIconModule } from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 import { AudioService } from '../../services/audio.service';
 
 @Component({
@@ -22,28 +21,39 @@ import { AudioService } from '../../services/audio.service';
   standalone: true,
   imports: [
     CommonModule, 
-    RouterModule, 
-    MatCardModule, 
-    MatButtonModule, 
-    MatIconModule,
+    RouterModule,
+    ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    ReactiveFormsModule,
-    MatProgressSpinnerModule
+    MatSelectModule,
+    MatIconModule,
+    MatCardModule,
+    MatButtonModule
   ],
   template: `
     <div class="library-container">
-      <div *ngIf="loading$ | async" class="loading">
-        <mat-spinner diameter="40"></mat-spinner>
-        Loading tracks...
+      <!-- Search and Filter Controls -->
+      <div class="controls">
+        <mat-form-field appearance="outline">
+          <mat-label>Search tracks</mat-label>
+          <input matInput [formControl]="searchControl" placeholder="Search by title or artist">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Filter by category</mat-label>
+          <mat-select [formControl]="categoryFilter">
+            <mat-option value="">All Categories</mat-option>
+            <mat-option *ngFor="let category of categories" [value]="category">
+              {{category}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
 
-      <div *ngIf="error$ | async as error" class="error">
-        {{ error }}
-      </div>
-
-      <div *ngIf="!(loading$ | async) && !(error$ | async)" class="tracks-grid">
-        <mat-card *ngFor="let track of tracks$ | async" class="track-card" (click)="playTrack(track)">
+      <!-- Tracks Grid -->
+      <div class="tracks-grid">
+        <mat-card *ngFor="let track of filteredTracks$ | async" class="track-card" (click)="playTrack(track)">
           <img mat-card-image [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
           
           <mat-card-content>
@@ -52,29 +62,34 @@ import { AudioService } from '../../services/audio.service';
             <p class="category">{{ track.category }}</p>
           </mat-card-content>
 
-          <mat-card-actions>
-            <button mat-icon-button [routerLink]="['/player', track.id]">
-              <mat-icon>play_arrow</mat-icon>
-            </button>
-            <button mat-icon-button (click)="deleteTrack(track.id)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </mat-card-actions>
+          <button mat-icon-button class="delete-btn" (click)="deleteTrack(track.id); $event.stopPropagation()">
+            <mat-icon>delete</mat-icon>
+          </button>
         </mat-card>
       </div>
     </div>
   `,
   styles: [`
     .library-container {
+      padding: 2rem;
       max-width: 1200px;
       margin: 0 auto;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    mat-form-field {
+      width: 100%;
     }
 
     .tracks-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 20px;
-      padding: 20px;
     }
 
     .track-card {
@@ -99,41 +114,39 @@ import { AudioService } from '../../services/audio.service';
       font-size: 0.9rem;
     }
 
-    mat-card-actions {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px;
-    }
-
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      padding: 2rem;
-      text-align: center;
-      color: rgba(0, 0, 0, 0.6);
-    }
-
-    .error {
-      color: #f44336;
-      text-align: center;
-      padding: 1rem;
-      margin: 1rem;
-      background: #ffebee;
-      border-radius: 4px;
+    .delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
     }
   `]
 })
 export class MusicLibraryComponent implements OnInit {
   tracks$ = this.store.select(selectAllTracks);
-  loading$ = this.store.select((state: { tracks: TrackState }) => state.tracks.loading);
-  error$ = this.store.select((state: { tracks: TrackState }) => state.tracks.error);
-  searchControl = new FormControl();
+  searchControl = new FormControl('');
+  categoryFilter = new FormControl('');
+  categories = ['pop', 'rock', 'rap', 'cha3bi'];
+
+  filteredTracks$ = combineLatest([
+    this.tracks$,
+    this.searchControl.valueChanges.pipe(startWith('')),
+    this.categoryFilter.valueChanges.pipe(startWith(''))
+  ]).pipe(
+    map(([tracks, search, category]) => {
+      return tracks.filter(track => {
+        const matchesSearch = !search || 
+          track.title.toLowerCase().includes(search.toLowerCase()) ||
+          track.artist.toLowerCase().includes(search.toLowerCase());
+        
+        const matchesCategory = !category || track.category === category;
+        
+        return matchesSearch && matchesCategory;
+      });
+    })
+  );
 
   constructor(
-    private store: Store<{ tracks: TrackState }>,
+    private store: Store,
     private audioService: AudioService
   ) {}
 

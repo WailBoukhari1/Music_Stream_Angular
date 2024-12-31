@@ -26,4 +26,9 @@ export const selectVolume = createSelector(
 export const selectError = createSelector(
   selectPlayerState,
   state => state.error
+);
+
+export const selectLoadingState = createSelector(
+  selectPlayerState,
+  (state: PlayerState) => state.loadingState
 ); 

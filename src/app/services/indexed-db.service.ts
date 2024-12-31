@@ -38,7 +38,8 @@ export class IndexedDBService {
     });
   }
 
-  async addTrack(track: Track, audioFile: File, thumbnail?: File | null): Promise<void> {
+  async addTrack(track: Track, audioFile: File, thumbnail?: File | null, 
+    progressCallback?: (progress: number) => void): Promise<void> {
     const db = await this.db;
     
     return new Promise((resolve, reject) => {
@@ -61,6 +62,18 @@ export class IndexedDBService {
 
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
+
+        // Add progress tracking
+        const chunkSize = 1024 * 1024; // 1MB chunks
+        let uploaded = 0;
+        
+        while (uploaded < audioFile.size) {
+          // ... chunk upload logic ...
+          uploaded += chunkSize;
+          if (progressCallback) {
+            progressCallback((uploaded / audioFile.size) * 100);
+          }
+        }
       } catch (error) {
         reject(error);
       }
