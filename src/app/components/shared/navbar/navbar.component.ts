@@ -17,50 +17,8 @@ import { UploadTrackComponent } from '../../upload-track/upload-track.component'
     MatButtonModule,
     MatIconModule
   ],
-  template: `
-    <mat-toolbar color="primary">
-      <a mat-button routerLink="/" class="brand">
-        <mat-icon>music_note</mat-icon>
-        Music Player
-      </a>
-      
-      <span class="spacer"></span>
-      
-      <nav>
-        <a mat-button routerLink="/library" routerLinkActive="active">
-          <mat-icon>library_music</mat-icon>
-          Library
-        </a>
-        <button mat-button (click)="openUploadDialog()">
-          <mat-icon>upload</mat-icon>
-          Upload
-        </button>
-      </nav>
-    </mat-toolbar>
-  `,
-  styles: [`
-    .spacer {
-      flex: 1 1 auto;
-    }
-
-    .brand {
-      font-size: 1.2rem;
-      text-decoration: none;
-    }
-
-    nav {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .active {
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    mat-icon {
-      margin-right: 8px;
-    }
-  `]
+  templateUrl: './navbar.component.html',
+  styleUrls: ['./navbar.component.scss']
 })
 export class NavbarComponent {
   constructor(private dialog: MatDialog) {}

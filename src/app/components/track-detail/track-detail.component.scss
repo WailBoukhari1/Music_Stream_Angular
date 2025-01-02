@@ -1,0 +1,83 @@
+.track-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.track-info-card {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.track-header {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent);
+}
+
+.track-header img {
+  width: 300px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.track-info {
+  flex: 1;
+}
+
+.track-info h1 {
+  margin: 0 0 1rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.artist {
+  font-size: 1.5rem;
+  color: rgba(0,0,0,0.7);
+  margin: 0.5rem 0;
+}
+
+.category {
+  background: rgba(0,0,0,0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  display: inline-block;
+  margin: 0.5rem 0;
+}
+
+.duration {
+  color: rgba(0,0,0,0.6);
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+mat-card-content {
+  padding: 2rem;
+}
+
+.description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.metadata {
+  color: rgba(0,0,0,0.6);
+  font-size: 0.9rem;
+}
+
+mat-card-actions {
+  padding: 1rem 2rem;
+  display: flex;
+  gap: 1rem;
+}

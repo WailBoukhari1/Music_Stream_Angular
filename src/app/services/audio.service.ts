@@ -19,7 +19,10 @@ export class AudioService {
   
   duration$ = new BehaviorSubject<number>(0);
   currentTime$ = new BehaviorSubject<number>(0);
-  
+  private queue: Track[] = [];
+  private queueSubject = new BehaviorSubject<Track[]>([]);
+  queue$ = this.queueSubject.asObservable();
+
   constructor(
     private store: Store,
     private indexedDB: IndexedDBService
@@ -160,16 +163,24 @@ export class AudioService {
   }
 
   async playNext() {
-    this.store.select(PlayerSelectors.selectCurrentTrack)
-      .pipe(take(1), filter(track => track !== null))
-      .subscribe(async currentTrack => {
-        const tracks = await this.indexedDB.getAllTracks();
-        const currentIndex = tracks.findIndex(t => t.id === currentTrack?.id);
-        const nextTrack = tracks[(currentIndex + 1) % tracks.length];
-        if (nextTrack) {
-          await this.playTrack(nextTrack);
-        }
-      });
+    if (this.queue.length > 0) {
+      const nextTrack = this.queue.shift();
+      this.queueSubject.next(this.queue);
+      if (nextTrack) {
+        await this.playTrack(nextTrack);
+      }
+    } else {
+      this.store.select(PlayerSelectors.selectCurrentTrack)
+        .pipe(take(1), filter(track => track !== null))
+        .subscribe(async currentTrack => {
+          const tracks = await this.indexedDB.getAllTracks();
+          const currentIndex = tracks.findIndex(t => t.id === currentTrack?.id);
+          const nextTrack = tracks[(currentIndex + 1) % tracks.length];
+          if (nextTrack) {
+            await this.playTrack(nextTrack);
+          }
+        });
+    }
   }
 
   async playPrevious() {
@@ -195,5 +206,20 @@ export class AudioService {
     if (this.audioContext) {
       this.audioContext.close();
     }
+  }
+
+  addToQueue(track: Track) {
+    this.queue.push(track);
+    this.queueSubject.next(this.queue);
+  }
+
+  removeFromQueue(index: number) {
+    this.queue.splice(index, 1);
+    this.queueSubject.next(this.queue);
+  }
+
+  clearQueue() {
+    this.queue = [];
+    this.queueSubject.next(this.queue);
   }
 } 

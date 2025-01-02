@@ -36,4 +36,14 @@ export const selectLoadingState = createSelector(
 export const selectPlaybackState = createSelector(
   selectPlayerState,
   (state) => state.playbackState
+);
+
+export const selectShuffle = createSelector(
+  selectPlayerState,
+  state => state.shuffle
+);
+
+export const selectRepeat = createSelector(
+  selectPlayerState,
+  state => state.repeat
 ); 

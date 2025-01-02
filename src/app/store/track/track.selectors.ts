@@ -1,14 +1,18 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { TrackState } from './track.reducer';
+import { TrackState, adapter } from './track.reducer';
+import { Track } from '../../models/track.model';
 
 export const selectTrackState = createFeatureSelector<TrackState>('tracks');
 
+// Get the selectors
+const { selectAll } = adapter.getSelectors();
+
 export const selectAllTracks = createSelector(
   selectTrackState,
-  (state: TrackState) => state.tracks
+  selectAll
 );
 
 export const selectTrackById = (id: string) => createSelector(
   selectAllTracks,
-  (tracks) => tracks.find(track => track.id === id)
+  (tracks: Track[]) => tracks.find((track: Track) => track.id === id)
 ); 

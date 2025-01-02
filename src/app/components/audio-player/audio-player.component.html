@@ -1,0 +1,89 @@
+<div class="player-container" [class.mini-mode]="isMiniMode">
+  <ng-container *ngIf="currentTrack$ | async as track; else noTrack">
+    <div class="now-playing">
+      <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
+      <div class="track-info">
+        <h3>{{ track.title }}</h3>
+        <p>{{ track.artist }}</p>
+        <p class="duration">
+          {{ (currentTime$ | async) ?? 0 | duration }} / {{ track.duration | duration }}
+        </p>
+        <p class="status">{{ playbackState$ | async }}</p>
+      </div>
+    </div>
+
+    <div class="player-controls">
+      <div class="control-buttons">
+        <button mat-icon-button (click)="audioService.playPrevious()">
+          <mat-icon>skip_previous</mat-icon>
+        </button>
+        
+        <button mat-icon-button class="play-button" (click)="togglePlay()">
+          <mat-icon>{{ (isPlaying$ | async) ? 'pause' : 'play_arrow' }}</mat-icon>
+        </button>
+        
+        <button mat-icon-button (click)="audioService.playNext()">
+          <mat-icon>skip_next</mat-icon>
+        </button>
+      </div>
+
+      <div class="playback-bar">
+        <span class="time">{{ (currentTime$ | async) ?? 0 | duration }}</span>
+        <mat-slider class="progress-slider" [max]="duration">
+          <input matSliderThumb
+            [value]="(currentTime$ | async) ?? 0"
+            (valueChange)="seekTo($event)"
+            (dragEnd)="onDragEnd($event)"
+          >
+        </mat-slider>
+        <span class="time">{{ duration | duration }}</span>
+      </div>
+    </div>
+
+    <div class="volume-control">
+      <button mat-icon-button (click)="toggleMute()">
+        <mat-icon>
+          {{((volume$ | async) ?? 1) === 0 ? 'volume_off' : 
+            ((volume$ | async) ?? 1) < 0.5 ? 'volume_down' : 'volume_up'}}
+        </mat-icon>
+      </button>
+      <mat-slider class="volume-slider">
+        <input matSliderThumb
+          [min]="0"
+          [max]="100"
+          [step]="1"
+          [value]="((volume$ | async) ?? 1) * 100"
+          (valueChange)="setVolume($event)"
+        >
+      </mat-slider>
+    </div>
+  </ng-container>
+
+  <ng-template #noTrack>
+    <div class="empty-player">
+      <mat-icon class="empty-icon">music_off</mat-icon>
+      <p>No track selected</p>
+      <small>Select a track from your library to start playing</small>
+    </div>
+  </ng-template>
+
+  <!-- Progress Preview -->
+  <div class="progress-preview" *ngIf="previewTime" [style.left.px]="previewPosition">
+    {{ previewTime | duration }}
+  </div>
+
+  <!-- Queue Management -->
+  <div class="queue-panel" *ngIf="showQueue">
+    <h3>Next Up</h3>
+    <div class="queue-list">
+      <!-- Queue items -->
+    </div>
+  </div>
+
+  <div *ngIf="error$ | async as error" class="error-message">
+    {{ error }}
+  </div>
+  <div *ngIf="(loadingState$ | async) === 'loading'" class="loading-indicator">
+    Loading...
+  </div>
+</div>

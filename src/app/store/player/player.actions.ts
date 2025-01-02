@@ -20,4 +20,6 @@ export const setError = createAction(
   '[Player] Set Error',
   props<{ message: string }>()
 );
-export const loadPersistedState = createAction('[Player] Load Persisted State'); 
+export const loadPersistedState = createAction('[Player] Load Persisted State');
+export const toggleShuffle = createAction('[Player] Toggle Shuffle');
+export const toggleRepeat = createAction('[Player] Toggle Repeat'); 

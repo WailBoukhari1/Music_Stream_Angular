@@ -34,4 +34,19 @@ export const updateTrackOrders = createAction(
 export const setError = createAction(
   '[Track] Set Error',
   props<{ error: string }>()
+);
+
+export const updateTrack = createAction(
+  '[Track] Update Track',
+  props<{ track: Track }>()
+);
+
+export const updateTrackSuccess = createAction(
+  '[Track] Update Track Success',
+  props<{ track: Track }>()
+);
+
+export const updateTrackFailure = createAction(
+  '[Track] Update Track Failure',
+  props<{ error: string }>()
 ); 
