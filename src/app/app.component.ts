@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { NavbarComponent } from './components/shared/navbar/navbar.component';
 import { FooterComponent } from './components/shared/footer/footer.component';
 import { AudioPlayerComponent } from './components/audio-player/audio-player.component';
 import { HeaderComponent } from './components/shared/header/header.component';

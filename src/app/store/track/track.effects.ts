@@ -66,7 +66,7 @@ export class TrackEffects {
     this.actions$.pipe(
       ofType(TrackActions.updateTrack),
       mergeMap(({ track }) =>
-        this.trackService.updateTrack(track).pipe(
+        from(this.indexedDB.updateTrack(track)).pipe(
           map(updatedTrack => TrackActions.updateTrackSuccess({ track: updatedTrack })),
           catchError(error => of(TrackActions.updateTrackFailure({ error: error.message })))
         )

@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
+import { Observable, Subject, takeUntil } from 'rxjs';
 import { Track } from '../../models/track.model';
 import { ActivatedRoute } from '@angular/router';
 import { AudioPlayerComponent } from '../audio-player/audio-player.component';
@@ -16,6 +16,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { EditTrackDialogComponent } from '../edit-track-dialog/edit-track-dialog.component';
+import * as PlayerActions from '../../store/player/player.actions';
+import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-track-detail',
@@ -33,8 +35,9 @@ import { EditTrackDialogComponent } from '../edit-track-dialog/edit-track-dialog
   templateUrl: './track-detail.component.html',
   styleUrls: ['./track-detail.component.scss']
 })
-export class TrackDetailComponent implements OnInit {
+export class TrackDetailComponent implements OnInit, OnDestroy {
   track$: Observable<Track | undefined>;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private store: Store,
@@ -44,21 +47,26 @@ export class TrackDetailComponent implements OnInit {
     private router: Router
   ) {
     const trackId = this.route.snapshot.paramMap.get('id') || '';
-    this.track$ = this.store.select(TrackSelectors.selectTrackById(trackId));
+    this.track$ = this.store.select(TrackSelectors.selectTrackById(trackId))
+      .pipe(takeUntil(this.destroy$));
   }
 
   ngOnInit() {
-    // Load tracks if they're not already loaded
     this.store.dispatch(TrackActions.loadTracks());
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.audioService.pause();
+    this.store.dispatch(PlayerActions.stop());
+    this.store.dispatch(PlayerActions.setTrack({ track: null }));
   }
 
   playTrack(track: Track) {
     this.audioService.playTrack(track);
   }
 
-  addToQueue(track: Track) {
-    // Implement queue functionality
-  }
 
   editTrack(track: Track) {
     const dialogRef = this.dialog.open(EditTrackDialogComponent, {
@@ -73,9 +81,18 @@ export class TrackDetailComponent implements OnInit {
   }
 
   confirmDelete(track: Track) {
-    if (confirm('Are you sure you want to delete this track?')) {
-      this.store.dispatch(TrackActions.deleteTrack({ id: track.id }));
-      this.router.navigate(['/library']);
-    }
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Track',
+        message: `Are you sure you want to delete "${track.title}"?`
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.store.dispatch(TrackActions.deleteTrack({ id: track.id }));
+        this.router.navigate(['/library']);
+      }
+    });
   }
 } 

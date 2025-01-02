@@ -21,7 +21,8 @@
   <!-- Tracks Grid -->
   <div class="tracks-grid">
     <mat-card *ngFor="let track of filteredTracks$ | async" 
-             class="track-card">
+             class="track-card"
+             (click)="viewTrackDetails(track)">
       <img mat-card-image [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
       
       <mat-card-content>
@@ -32,12 +33,9 @@
       </mat-card-content>
 
       <mat-card-actions>
-        <button mat-raised-button color="primary" (click)="viewTrackDetails(track, $event)">
+        <button mat-raised-button color="primary">
           <mat-icon>play_arrow</mat-icon>
-          Play
-        </button>
-        <button mat-icon-button class="delete-btn" (click)="deleteTrack(track.id)">
-          <mat-icon>delete</mat-icon>
+          View Details
         </button>
       </mat-card-actions>
     </mat-card>

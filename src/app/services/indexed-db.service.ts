@@ -174,4 +174,12 @@ export class IndexedDBService {
       }
     });
   }
+
+  async updateTrack(track: Track): Promise<Track> {
+    const db = await this.db;
+    const tx = db.transaction(['tracks'], 'readwrite');
+    const store = tx.objectStore('tracks');
+    await store.put(track);
+    return track;
+  }
 } 
