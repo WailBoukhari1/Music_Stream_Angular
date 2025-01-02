@@ -69,10 +69,12 @@ export class AudioService {
     });
 
     this.audio.addEventListener('error', (e) => {
-      const error = e.target as HTMLAudioElement;
-      this.store.dispatch(PlayerActions.setError({ 
-        message: `Playback error: ${error.error?.message || 'Unknown error'}`
-      }));
+      if (this.audio.src) {
+        const error = e.target as HTMLAudioElement;
+        this.store.dispatch(PlayerActions.setError({ 
+          message: `Playback error: ${error.error?.message || 'Unknown error'}`
+        }));
+      }
     });
   }
 
@@ -116,8 +118,16 @@ export class AudioService {
 
   async playTrack(track: Track) {
     try {
+      if (!track || !track.id) {
+        return;
+      }
+
       await this.initAudioContext();
       const audioFile = await this.indexedDB.getAudioFile(track.id);
+      if (!audioFile) {
+        throw new Error('Audio file not found');
+      }
+
       const duration = await this.calculateDuration(audioFile);
       const audioUrl = URL.createObjectURL(audioFile);
 
@@ -131,6 +141,7 @@ export class AudioService {
       }));
       await this.audio.play();
     } catch (error: any) {
+      console.error('Playback error:', error);
       this.store.dispatch(PlayerActions.setError({ 
         message: `Failed to load track: ${error.message}` 
       }));

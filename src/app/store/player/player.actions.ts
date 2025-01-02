@@ -6,7 +6,7 @@ export const pause = createAction('[Player] Pause');
 export const stop = createAction('[Player] Stop');
 export const setTrack = createAction(
   '[Player] Set Track',
-  props<{ track: Track }>()
+  props<{ track: Track | null }>()
 );
 export const setCurrentTime = createAction(
   '[Player] Set Current Time',

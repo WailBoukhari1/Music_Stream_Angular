@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
-import { Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { map, startWith, takeUntil } from 'rxjs/operators';
 import { Track } from '../../models/track.model';
 import * as TrackActions from '../../store/track/track.actions';
 import { selectAllTracks } from '../../store/track/track.selectors';
@@ -35,7 +35,8 @@ import { Router } from '@angular/router';
   templateUrl: './music-library.component.html',
   styleUrls: ['./music-library.component.scss']
 })
-export class MusicLibraryComponent implements OnInit {
+export class MusicLibraryComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   tracks$ = this.store.select(selectAllTracks);
   searchControl = new FormControl('');
   categoryFilter = new FormControl('');
@@ -46,6 +47,7 @@ export class MusicLibraryComponent implements OnInit {
     this.searchControl.valueChanges.pipe(startWith('')),
     this.categoryFilter.valueChanges.pipe(startWith(''))
   ]).pipe(
+    takeUntil(this.destroy$),
     map(([tracks, search, category]) => {
       return tracks.filter((track: Track) => {
         const matchesSearch = !search || 
@@ -69,12 +71,16 @@ export class MusicLibraryComponent implements OnInit {
     this.store.dispatch(TrackActions.loadTracks());
   }
 
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   deleteTrack(id: string) {
     this.store.dispatch(TrackActions.deleteTrack({ id }));
   }
 
-  viewTrackDetails(track: Track, event: Event) {
-    event.stopPropagation();
+  viewTrackDetails(track: Track) {
     this.router.navigate(['/track', track.id]);
   }
 } 

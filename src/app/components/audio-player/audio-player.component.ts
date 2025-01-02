@@ -45,10 +45,14 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
     private store: Store,
     public audioService: AudioService
   ) {
-    this.currentTrack$ = this.store.select(PlayerSelectors.selectCurrentTrack);
-    this.isPlaying$ = this.store.select(PlayerSelectors.selectIsPlaying);
-    this.currentTime$ = this.store.select(PlayerSelectors.selectCurrentTime);
-    this.volume$ = this.store.select(PlayerSelectors.selectVolume);
+    this.currentTrack$ = this.store.select(PlayerSelectors.selectCurrentTrack)
+      .pipe(takeUntil(this.destroy$));
+    this.isPlaying$ = this.store.select(PlayerSelectors.selectIsPlaying)
+      .pipe(takeUntil(this.destroy$));
+    this.currentTime$ = this.store.select(PlayerSelectors.selectCurrentTime)
+      .pipe(takeUntil(this.destroy$));
+    this.volume$ = this.store.select(PlayerSelectors.selectVolume)
+      .pipe(takeUntil(this.destroy$));
     this.error$ = this.store.select(PlayerSelectors.selectError);
     this.loadingState$ = this.store.select(PlayerSelectors.selectLoadingState);
   }
@@ -94,5 +98,6 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    this.audioService.cleanup();
   }
 } 
