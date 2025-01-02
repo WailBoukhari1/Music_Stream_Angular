@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { from, of } from 'rxjs';
-import { map, switchMap, catchError, tap } from 'rxjs/operators';
+import { map, switchMap, catchError, tap, mergeMap } from 'rxjs/operators';
 import { IndexedDBService } from '../../services/indexed-db.service';
 import * as TrackActions from './track.actions';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -60,6 +60,18 @@ export class TrackEffects {
       })
     ),
     { dispatch: false }
+  );
+
+  updateTrack$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(TrackActions.updateTrack),
+      mergeMap(({ track }) =>
+        this.trackService.updateTrack(track).pipe(
+          map(updatedTrack => TrackActions.updateTrackSuccess({ track: updatedTrack })),
+          catchError(error => of(TrackActions.updateTrackFailure({ error: error.message })))
+        )
+      )
+    )
   );
 
   constructor(

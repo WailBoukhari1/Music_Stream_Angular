@@ -16,6 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { AudioService } from '../../services/audio.service';
 import { combineLatest } from 'rxjs';
 import { DurationPipe } from '../../pipes/duration.pipe';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-music-library',
@@ -31,110 +32,8 @@ import { DurationPipe } from '../../pipes/duration.pipe';
     MatButtonModule,
     DurationPipe
   ],
-  template: `
-    <div class="library-container">
-      <!-- Search and Filter Controls -->
-      <div class="controls">
-        <mat-form-field appearance="outline">
-          <mat-label>Search tracks</mat-label>
-          <input matInput [formControl]="searchControl" placeholder="Search by title or artist">
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Filter by category</mat-label>
-          <mat-select [formControl]="categoryFilter">
-            <mat-option value="">All Categories</mat-option>
-            <mat-option *ngFor="let category of categories" [value]="category">
-              {{category}}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-      </div>
-
-      <!-- Tracks Grid -->
-      <div class="tracks-grid">
-        <mat-card *ngFor="let track of filteredTracks$ | async" 
-                 class="track-card"
-                 (click)="playTrack(track)">
-          <img mat-card-image [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
-          
-          <mat-card-content>
-            <h3>{{ track.title }}</h3>
-            <p class="artist">{{ track.artist }}</p>
-            <p class="duration">{{ track.duration | duration }}</p>
-            <p class="category">{{ track.category }}</p>
-          </mat-card-content>
-
-          <button mat-icon-button class="delete-btn" (click)="deleteTrack(track.id); $event.stopPropagation()">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </mat-card>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .library-container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .controls {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    .tracks-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-
-    mat-card {
-      transition: transform 0.2s ease-in-out;
-    }
-
-    mat-card:hover {
-      transform: translateY(-4px);
-    }
-
-    mat-card-content {
-      padding: 1rem;
-    }
-
-    mat-card img {
-      aspect-ratio: 1;
-      object-fit: cover;
-    }
-
-    h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .artist, .category {
-      margin: 4px 0;
-      color: rgba(0,0,0,0.6);
-      font-size: 0.9rem;
-    }
-
-    .delete-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(0,0,0,0.5);
-      color: white;
-    }
-  `]
+  templateUrl: './music-library.component.html',
+  styleUrls: ['./music-library.component.scss']
 })
 export class MusicLibraryComponent implements OnInit {
   tracks$ = this.store.select(selectAllTracks);
@@ -148,7 +47,7 @@ export class MusicLibraryComponent implements OnInit {
     this.categoryFilter.valueChanges.pipe(startWith(''))
   ]).pipe(
     map(([tracks, search, category]) => {
-      return tracks.filter(track => {
+      return tracks.filter((track: Track) => {
         const matchesSearch = !search || 
           track.title.toLowerCase().includes(search.toLowerCase()) ||
           track.artist.toLowerCase().includes(search.toLowerCase());
@@ -162,7 +61,8 @@ export class MusicLibraryComponent implements OnInit {
 
   constructor(
     private store: Store,
-    private audioService: AudioService
+    private audioService: AudioService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -173,7 +73,8 @@ export class MusicLibraryComponent implements OnInit {
     this.store.dispatch(TrackActions.deleteTrack({ id }));
   }
 
-  playTrack(track: Track) {
-    this.audioService.playTrack(track);
+  viewTrackDetails(track: Track, event: Event) {
+    event.stopPropagation();
+    this.router.navigate(['/track', track.id]);
   }
 } 

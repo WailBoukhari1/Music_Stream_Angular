@@ -1,0 +1,22 @@
+
+    .spacer {
+      flex: 1 1 auto;
+    }
+
+    .brand {
+      font-size: 1.2rem;
+      text-decoration: none;
+    }
+
+    nav {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    mat-icon {
+      margin-right: 8px;
+    }

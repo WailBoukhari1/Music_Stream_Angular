@@ -1,0 +1,45 @@
+<div class="library-container">
+  <!-- Search and Filter Controls -->
+  <div class="controls">
+    <mat-form-field appearance="outline">
+      <mat-label>Search tracks</mat-label>
+      <input matInput [formControl]="searchControl" placeholder="Search by title or artist">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Filter by category</mat-label>
+      <mat-select [formControl]="categoryFilter">
+        <mat-option value="">All Categories</mat-option>
+        <mat-option *ngFor="let category of categories" [value]="category">
+          {{category}}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Tracks Grid -->
+  <div class="tracks-grid">
+    <mat-card *ngFor="let track of filteredTracks$ | async" 
+             class="track-card">
+      <img mat-card-image [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
+      
+      <mat-card-content>
+        <h3>{{ track.title }}</h3>
+        <p class="artist">{{ track.artist }}</p>
+        <p class="duration">{{ track.duration | duration }}</p>
+        <p class="category">{{ track.category }}</p>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-raised-button color="primary" (click)="viewTrackDetails(track, $event)">
+          <mat-icon>play_arrow</mat-icon>
+          Play
+        </button>
+        <button mat-icon-button class="delete-btn" (click)="deleteTrack(track.id)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

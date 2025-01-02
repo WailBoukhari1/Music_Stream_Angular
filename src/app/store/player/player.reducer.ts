@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import * as PlayerActions from './player.actions';
-import { Track } from '../../models/track.model';
+import { Track, PlayerState as PlaybackState } from '../../models/track.model';
 
 export interface PlayerState {
   currentTrack: Track | null;
@@ -9,7 +9,9 @@ export interface PlayerState {
   volume: number;
   error: string | null;
   loadingState: 'loading' | 'error' | 'success';
-  playbackState: 'playing' | 'paused' | 'buffering' | 'stopped';
+  playbackState: string;
+  shuffle: boolean;
+  repeat: boolean;
 }
 
 export const initialState: PlayerState = {
@@ -19,20 +21,54 @@ export const initialState: PlayerState = {
   volume: 1,
   error: null,
   loadingState: 'success',
-  playbackState: 'stopped'
+  playbackState: 'stopped',
+  shuffle: false,
+  repeat: false
 };
 
 export const playerReducer = createReducer(
   initialState,
-  on(PlayerActions.play, state => ({ ...state, isPlaying: true })),
-  on(PlayerActions.pause, state => ({ ...state, isPlaying: false })),
-  on(PlayerActions.stop, state => ({ ...state, isPlaying: false, currentTime: 0 })),
+  on(PlayerActions.play, state => ({ 
+    ...state, 
+    isPlaying: true,
+    playbackState: 'playing' as PlaybackState
+  })),
+  on(PlayerActions.pause, state => ({ 
+    ...state, 
+    isPlaying: false,
+    playbackState: 'paused' as PlaybackState
+  })),
+  on(PlayerActions.stop, state => ({ 
+    ...state, 
+    isPlaying: false, 
+    currentTime: 0,
+    playbackState: 'stopped' as PlaybackState
+  })),
   on(PlayerActions.setTrack, (state, { track }) => ({ 
     ...state, 
     currentTrack: track,
-    isPlaying: true 
+    isPlaying: true,
+    playbackState: 'playing' as PlaybackState
   })),
-  on(PlayerActions.setCurrentTime, (state, { time }) => ({ ...state, currentTime: time })),
-  on(PlayerActions.setVolume, (state, { volume }) => ({ ...state, volume })),
-  on(PlayerActions.setError, (state, { message }) => ({ ...state, error: message }))
+  on(PlayerActions.setCurrentTime, (state, { time }) => ({ 
+    ...state, 
+    currentTime: time 
+  })),
+  on(PlayerActions.setVolume, (state, { volume }) => ({ 
+    ...state, 
+    volume 
+  })),
+  on(PlayerActions.setError, (state, { message }) => ({ 
+    ...state, 
+    error: message,
+    playbackState: 'stopped' as PlaybackState
+  })),
+  on(PlayerActions.toggleShuffle, (state) => ({
+    ...state,
+    shuffle: !state.shuffle
+  })),
+  on(PlayerActions.toggleRepeat, (state) => ({
+    ...state,
+    repeat: !state.repeat
+  }))
 ); 

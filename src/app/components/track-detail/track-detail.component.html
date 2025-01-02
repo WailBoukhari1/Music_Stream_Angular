@@ -1,0 +1,41 @@
+    <div class="track-detail">
+      <ng-container *ngIf="track$ | async as track; else loading">
+        <mat-card class="track-info-card">
+          <div class="track-header">
+            <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
+            <div class="track-info">
+              <h1>{{ track.title }}</h1>
+              <p class="artist">{{ track.artist }}</p>
+              <p class="category">{{ track.category }}</p>
+              <p class="duration">{{ track.duration | duration }}</p>
+            </div>
+            <div class="actions">
+              <button mat-icon-button (click)="editTrack(track)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="confirmDelete(track)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+          
+          <mat-card-content>
+            <p class="description">{{ track.description }}</p>
+            <p class="metadata">Added: {{ track.addedDate | date }}</p>
+          </mat-card-content>
+          
+          <mat-card-actions>
+            <button mat-raised-button color="primary" (click)="playTrack(track)">
+              <mat-icon>play_arrow</mat-icon> Play
+            </button>
+          </mat-card-actions>
+        </mat-card>
+
+        <app-audio-player></app-audio-player>
+      </ng-container>
+
+      <ng-template #loading>
+        <mat-spinner></mat-spinner>
+      </ng-template>
+    </div>
+ 
