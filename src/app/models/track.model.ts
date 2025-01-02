@@ -9,6 +9,7 @@ export interface Track {
   thumbnailUrl?: string;
   audioUrl: string;
   order?: number; // For drag & drop functionality
+  releaseDate?: string;
 }
 
 export type PlayerState = 'playing' | 'paused' | 'buffering' | 'stopped';

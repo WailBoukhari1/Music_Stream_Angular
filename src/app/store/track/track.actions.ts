@@ -49,4 +49,9 @@ export const updateTrackSuccess = createAction(
 export const updateTrackFailure = createAction(
   '[Track] Update Track Failure',
   props<{ error: string }>()
+);
+
+export const playTrack = createAction(
+  '[Track] Play Track',
+  props<{ track: Track }>()
 ); 

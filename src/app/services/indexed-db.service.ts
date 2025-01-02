@@ -8,6 +8,16 @@ export class IndexedDBService {
   private dbName = 'musicPlayerDB';
   private dbVersion = 3;
   private db: Promise<IDBDatabase>;
+  private readonly MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB in bytes
+  private readonly VALID_AUDIO_TYPES = [
+    'audio/mp3',
+    'audio/mpeg',  // Common MIME type for MP3
+    'audio/wav',
+    'audio/wave',  // Alternative WAV MIME type
+    'audio/x-wav',
+    'audio/ogg',
+    'audio/vorbis'
+  ];
 
   constructor() {
     this.db = this.initDB();
@@ -39,6 +49,17 @@ export class IndexedDBService {
   }
 
   async addTrack(track: Track, audioFile: File, thumbnail?: File | null): Promise<void> {
+    // Validate file size and format before proceeding
+    if (!await this.validateFileSize(audioFile)) {
+      throw new Error('Audio file size exceeds 15MB limit');
+    }
+    if (!await this.validateAudioFormat(audioFile)) {
+      throw new Error('Invalid audio format. Supported formats: MP3, WAV, OGG');
+    }
+    if (thumbnail && !await this.validateFileSize(thumbnail)) {
+      throw new Error('Thumbnail file size exceeds 15MB limit');
+    }
+
     const db = await this.db;
     
     return new Promise((resolve, reject) => {
@@ -49,27 +70,33 @@ export class IndexedDBService {
         const audioStore = transaction.objectStore('audioFiles');
         const thumbnailStore = transaction.objectStore('thumbnails');
 
-        // Store the audio file
+        // Store the audio file with size information
         audioStore.put({
           id: track.id,
-          file: audioFile
+          file: audioFile,
+          size: audioFile.size
         });
 
         // Store the thumbnail if provided
         if (thumbnail) {
           thumbnailStore.put({
             id: track.id,
-            file: thumbnail
+            file: thumbnail,
+            size: thumbnail.size
           });
         }
 
-        // Store the track metadata
-        tracksStore.put(track);
+        // Store the track metadata with file sizes
+        tracksStore.put({
+          ...track,
+          audioSize: audioFile.size,
+          thumbnailSize: thumbnail?.size
+        });
 
         transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
+        transaction.onerror = () => reject(this.handleError(transaction.error));
       } catch (error) {
-        reject(error);
+        reject(this.handleError(error));
       }
     });
   }
@@ -181,5 +208,82 @@ export class IndexedDBService {
     const store = tx.objectStore('tracks');
     await store.put(track);
     return track;
+  }
+
+  async validateFileSize(file: File): Promise<boolean> {
+    return file.size <= this.MAX_FILE_SIZE;
+  }
+
+  async validateAudioFormat(file: File): Promise<boolean> {
+    // Check if the file type matches any of our valid types
+    if (this.VALID_AUDIO_TYPES.includes(file.type)) {
+      return true;
+    }
+
+    // Check file extension as fallback
+    const fileName = file.name.toLowerCase();
+    const validExtensions = ['.mp3', '.wav', '.ogg'];
+    return validExtensions.some(ext => fileName.endsWith(ext));
+  }
+
+  async getThumbnail(trackId: string): Promise<File | null> {
+    const db = await this.db;
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction('thumbnails', 'readonly');
+        const store = transaction.objectStore('thumbnails');
+        const request = store.get(trackId);
+
+        request.onsuccess = () => resolve(request.result?.file || null);
+        request.onerror = () => reject(this.handleError(request.error));
+      } catch (error) {
+        reject(this.handleError(error));
+      }
+    });
+  }
+
+  async getTrackWithFiles(trackId: string): Promise<{ 
+    track: Track, 
+    audioFile: File, 
+    thumbnail: File | null 
+  }> {
+    const db = await this.db;
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(['tracks', 'audioFiles', 'thumbnails'], 'readonly');
+        
+        const tracksStore = transaction.objectStore('tracks');
+        const audioStore = transaction.objectStore('audioFiles');
+        const thumbnailStore = transaction.objectStore('thumbnails');
+
+        const trackRequest = tracksStore.get(trackId);
+        const audioRequest = audioStore.get(trackId);
+        const thumbnailRequest = thumbnailStore.get(trackId);
+
+        transaction.oncomplete = () => {
+          if (!trackRequest.result || !audioRequest.result) {
+            reject(new Error('Track or audio file not found'));
+            return;
+          }
+
+          resolve({
+            track: trackRequest.result,
+            audioFile: audioRequest.result.file,
+            thumbnail: thumbnailRequest.result?.file || null
+          });
+        };
+        
+        transaction.onerror = () => reject(this.handleError(transaction.error));
+      } catch (error) {
+        reject(this.handleError(error));
+      }
+    });
+  }
+
+  private handleError(error: any): Error {
+    console.error('IndexedDB Error:', error);
+    return new Error(`IndexedDB operation failed: ${error.message || 'Unknown error'}`);
   }
 } 

@@ -135,7 +135,8 @@ export class UploadTrackComponent {
           addedDate: new Date(),
           duration: 0,
           audioUrl: '',
-          thumbnailUrl: this.imagePreview || undefined
+          thumbnailUrl: this.imagePreview || undefined,
+          releaseDate: new Date().toISOString()
         };
 
         this.store.dispatch(TrackActions.addTrack({ 
