@@ -1,34 +1,34 @@
-import { ApplicationConfig, isDevMode } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { ApplicationConfig, ErrorHandler } from '@angular/core';
+import { GlobalErrorHandler } from './services/error-handler.service';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { routes } from './app.routes';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
-import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { routes } from './app.routes';
+
+// Import your reducers and effects
 import { trackReducer } from './store/track/track.reducer';
 import { playerReducer } from './store/player/player.reducer';
 import { TrackEffects } from './store/track/track.effects';
 import { PlayerEffects } from './store/player/player.effects';
 import { ErrorEffects } from './store/error.effects';
-import { MAT_DIALOG_DEFAULT_OPTIONS } from '@angular/material/dialog';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
+    provideAnimations(),
+    provideHttpClient(withInterceptors([])),
+    provideRouter(routes, withComponentInputBinding()),
     provideStore({
       tracks: trackReducer,
       player: playerReducer
     }),
-    provideEffects([TrackEffects, PlayerEffects, ErrorEffects]),
-    provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
-    provideAnimations(),
-    {
-      provide: MAT_DIALOG_DEFAULT_OPTIONS,
-      useValue: {
-        hasBackdrop: true,
-        disableClose: false,
-        width: '500px'
-      }
-    }
+    provideEffects([
+      TrackEffects,
+      PlayerEffects,
+      ErrorEffects
+    ]), provideAnimationsAsync()
   ]
 };

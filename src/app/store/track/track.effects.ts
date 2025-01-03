@@ -1,37 +1,31 @@
 import { Injectable } from '@angular/core';
-import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { from, of } from 'rxjs';
-import { map, switchMap, catchError, tap, mergeMap } from 'rxjs/operators';
-import { IndexedDBService } from '../../services/indexed-db.service';
+import { Actions, ofType, createEffect } from '@ngrx/effects';
+import { of } from 'rxjs';
+import { catchError, map, mergeMap } from 'rxjs/operators';
+import { TrackService } from '../../services/track.service';
 import * as TrackActions from './track.actions';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Injectable()
 export class TrackEffects {
   loadTracks$ = createEffect(() =>
     this.actions$.pipe(
       ofType(TrackActions.loadTracks),
-      switchMap(() => from(this.indexedDB.getAllTracks()).pipe(
-        map(tracks => TrackActions.loadTracksSuccess({ tracks })),
-        catchError(error => of(TrackActions.loadTracksFailure({ 
-          error: error?.message || 'Failed to load tracks' 
-        })))
-      ))
+      mergeMap(() =>
+        this.trackService.getAllTracks().pipe(
+          map(tracks => TrackActions.loadTracksSuccess({ tracks })),
+          catchError(error => of(TrackActions.loadTracksFailure({ error })))
+        )
+      )
     )
   );
 
-  addTrack$ = createEffect(() =>
+  loadTrack$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(TrackActions.addTrack),
-      switchMap(({ track, audioFile, thumbnail }) => 
-        from(this.indexedDB.addTrack(track, audioFile, thumbnail)).pipe(
-          map(() => TrackActions.loadTracks()),
-          catchError(error => {
-            console.error('Error adding track:', error);
-            return of(TrackActions.loadTracksFailure({ 
-              error: error?.message || 'Failed to add track' 
-            }));
-          })
+      ofType(TrackActions.loadTrack),
+      mergeMap(action =>
+        this.trackService.getTrackById(action.id).pipe(
+          map(track => TrackActions.loadTrackSuccess({ track })),
+          catchError(error => of(TrackActions.loadTrackFailure({ error })))
         )
       )
     )
@@ -40,35 +34,10 @@ export class TrackEffects {
   deleteTrack$ = createEffect(() =>
     this.actions$.pipe(
       ofType(TrackActions.deleteTrack),
-      switchMap(({ id }) => from(this.indexedDB.deleteTrack(id)).pipe(
-        map(() => TrackActions.loadTracks()),
-        catchError(error => of(TrackActions.loadTracksFailure({ 
-          error: error?.message || 'Failed to delete track' 
-        })))
-      ))
-    )
-  );
-
-  handleErrors$ = createEffect(() => 
-    this.actions$.pipe(
-      ofType(TrackActions.loadTracksFailure),
-      tap(({ error }) => {
-        this.snackBar.open(error || 'An error occurred', 'Close', {
-          duration: 3000,
-          panelClass: ['error-snackbar']
-        });
-      })
-    ),
-    { dispatch: false }
-  );
-
-  updateTrack$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(TrackActions.updateTrack),
-      mergeMap(({ track }) =>
-        from(this.indexedDB.updateTrack(track)).pipe(
-          map(updatedTrack => TrackActions.updateTrackSuccess({ track: updatedTrack })),
-          catchError(error => of(TrackActions.updateTrackFailure({ error: error.message })))
+      mergeMap(({ id }) =>
+        this.trackService.deleteTrack(id).pipe(
+          map(() => TrackActions.deleteTrackSuccess({ id })),
+          catchError(error => of(TrackActions.deleteTrackFailure({ error: error.message })))
         )
       )
     )
@@ -76,7 +45,6 @@ export class TrackEffects {
 
   constructor(
     private actions$: Actions,
-    private indexedDB: IndexedDBService,
-    private snackBar: MatSnackBar
+    private trackService: TrackService
   ) {}
 } 

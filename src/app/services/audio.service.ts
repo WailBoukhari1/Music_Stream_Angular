@@ -118,41 +118,48 @@ export class AudioService {
 
   async playTrack(track: Track) {
     try {
-      if (!track || !track.id) {
-        return;
-      }
-
       await this.initAudioContext();
       const audioFile = await this.indexedDB.getAudioFile(track.id);
+      
       if (!audioFile) {
         throw new Error('Audio file not found');
       }
-
-      const duration = await this.calculateDuration(audioFile);
-      const audioUrl = URL.createObjectURL(audioFile);
 
       if (this.audio.src) {
         URL.revokeObjectURL(this.audio.src);
       }
 
+      const audioUrl = URL.createObjectURL(audioFile);
       this.audio.src = audioUrl;
-      this.store.dispatch(PlayerActions.setTrack({ 
-        track: { ...track, duration } 
-      }));
+      
       await this.audio.play();
+      this.store.dispatch(PlayerActions.play());
     } catch (error: any) {
-      console.error('Playback error:', error);
       this.store.dispatch(PlayerActions.setError({ 
-        message: `Failed to load track: ${error.message}` 
+        message: `Playback error: ${error.message}` 
       }));
+      this.cleanup();
     }
   }
 
   async play() {
     try {
       await this.initAudioContext();
-      await this.audio.play();
+      if (this.audio.src) {
+        await this.audio.play();
+        this.store.dispatch(PlayerActions.play());
+      } else {
+        // If no track is loaded, try to get current track from store
+        this.store.select(PlayerSelectors.selectCurrentTrack)
+          .pipe(take(1))
+          .subscribe(async track => {
+            if (track) {
+              await this.playTrack(track);
+            }
+          });
+      }
     } catch (error: any) {
+      console.error('Play error:', error);
       this.store.dispatch(PlayerActions.setError({ 
         message: `Failed to play: ${error.message}` 
       }));
@@ -216,6 +223,7 @@ export class AudioService {
     this.audio.src = '';
     if (this.audioContext) {
       this.audioContext.close();
+      this.audioContext = null;
     }
   }
 

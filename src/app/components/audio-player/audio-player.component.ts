@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
@@ -20,6 +21,7 @@ import { DurationPipe } from '../../pipes/duration.pipe';
     MatIconModule,
     MatSliderModule,
     MatButtonModule,
+    MatProgressBarModule,
     DurationPipe
   ],
   templateUrl: './audio-player.component.html',
@@ -75,9 +77,15 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
     });
   }
 
-  seekTo(value: number) {
+  seekTo(event: MouseEvent) {
+    const progressBar = event.currentTarget as HTMLElement;
+    const rect = progressBar.getBoundingClientRect();
+    const percentage = (event.clientX - rect.left) / rect.width;
+    const seekTime = this.duration * percentage;
+    
     this.isDragging = true;
-    this.store.dispatch(PlayerActions.setCurrentTime({ time: value }));
+    this.store.dispatch(PlayerActions.setCurrentTime({ time: seekTime }));
+    this.audioService.seek(seekTime);
   }
 
   onDragEnd(event: any) {
@@ -91,7 +99,8 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
     });
   }
 
-  setVolume(value: number) {
+  setVolume(event: any) {
+    const value = event.target?.value ?? event;
     this.audioService.setVolume(value / 100);
   }
 
@@ -99,5 +108,9 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     this.audioService.cleanup();
+  }
+
+  getFormattedTime(time: number | null): number {
+    return time ?? 0;
   }
 } 

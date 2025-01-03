@@ -1,27 +1,85 @@
 @use '@angular/material' as mat;
 
+// Custom Crimson palette
+$crimson-palette: (
+  50: #ffe1e7,
+  100: #ffb3c1,
+  200: #fd8198,
+  300: #fc4f6f,
+  400: #fb2951,
+  500: #dc143c, // Main crimson color
+  600: #cc1236,
+  700: #b80f2f,
+  800: #a80c28,
+  900: #8b071c,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: white,
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+  )
+);
+
 @include mat.core();
 
-$primary-palette: mat.define-palette(mat.$indigo-palette);
-$accent-palette: mat.define-palette(mat.$pink-palette);
-$warn-palette: mat.define-palette(mat.$red-palette);
+$primary: mat.define-palette($crimson-palette, 500);
+$accent: mat.define-palette(mat.$grey-palette, A200, A100, A400);
+$warn: mat.define-palette(mat.$red-palette);
 
-$theme: mat.define-light-theme((
+$theme: mat.define-dark-theme((
   color: (
-    primary: $primary-palette,
-    accent: $accent-palette,
-    warn: $warn-palette,
+    primary: $primary,
+    accent: $accent,
+    warn: $warn,
   ),
   typography: mat.define-typography-config(),
-  density: 0,
 ));
 
 @include mat.all-component-themes($theme);
 
-html, body {
-  height: 100%;
+// Global styles
+html, body { 
+  height: 100%; 
   margin: 0;
-  padding: 0;
-  
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #121212;
+  color: white;
+  background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(circle at 15% 50%, rgba(220, 20, 60, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 85% 30%, rgba(220, 20, 60, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+  }
+}
+
+body { 
+  font-family: Roboto, "Helvetica Neue", sans-serif; 
+}
+
+// Utility classes
+.error-message {
+  color: mat.get-color-from-palette($warn);
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }

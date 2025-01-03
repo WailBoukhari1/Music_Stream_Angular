@@ -1,25 +1,24 @@
 <div class="library-container">
   <!-- Header Section -->
-  <header class="library-header">
-    <h1>Music Library</h1>
-    <button mat-raised-button color="primary" (click)="toggleEditMode()">
-      <mat-icon>{{ isEditMode ? 'lock' : 'edit' }}</mat-icon>
-      {{ isEditMode ? 'Lock Order' : 'Edit Order' }}
-    </button>
-  </header>
+  <div class="library-header">
+    <div class="header-content">
+      <h1>Your Music Library</h1>
+      <button mat-stroked-button (click)="toggleEditMode()" class="edit-button">
+        <mat-icon>{{ isEditMode ? 'lock' : 'edit' }}</mat-icon>
+        {{ isEditMode ? 'Lock Order' : 'Edit Order' }}
+      </button>
+    </div>
+  </div>
 
   <!-- Filters Section -->
-  <section class="filters-section">
+  <div class="filters-section">
     <form [formGroup]="filterForm" class="filters-container">
-      <!-- Search Field -->
       <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Search tracks</mat-label>
-        <input matInput formControlName="search" placeholder="Search by title or artist">
-        <mat-icon matSuffix>search</mat-icon>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput formControlName="search" placeholder="Search tracks...">
       </mat-form-field>
 
       <div class="filter-group">
-        <!-- Category Filter -->
         <mat-form-field appearance="outline">
           <mat-label>Category</mat-label>
           <mat-select formControlName="category">
@@ -28,10 +27,8 @@
               {{category | titlecase}}
             </mat-option>
           </mat-select>
-          <mat-icon matSuffix>category</mat-icon>
         </mat-form-field>
 
-        <!-- Duration Filter -->
         <mat-form-field appearance="outline">
           <mat-label>Duration</mat-label>
           <mat-select formControlName="duration">
@@ -40,112 +37,88 @@
               {{range.label}}
             </mat-option>
           </mat-select>
-          <mat-icon matSuffix>timer</mat-icon>
         </mat-form-field>
 
-        <!-- Year Filter -->
         <mat-form-field appearance="outline">
-          <mat-label>Release Year</mat-label>
-          <mat-select formControlName="year">
-            <mat-option>Any Year</mat-option>
-            <mat-option *ngFor="let year of years" [value]="year">
-              {{year}}
-            </mat-option>
+          <mat-label>Sort By</mat-label>
+          <mat-select formControlName="sortBy">
+            <mat-option value="addedDate">Date Added</mat-option>
+            <mat-option value="title">Title</mat-option>
+            <mat-option value="artist">Artist</mat-option>
+            <mat-option value="duration">Duration</mat-option>
           </mat-select>
-          <mat-icon matSuffix>calendar_today</mat-icon>
         </mat-form-field>
       </div>
     </form>
-  </section>
+  </div>
 
-  <!-- Tracks Grid Section -->
-  <section class="tracks-section">
-    <div class="tracks-grid" cdkDropList (cdkDropListDropped)="onDrop($event)" [cdkDropListDisabled]="!isEditMode">
-      <div *ngFor="let track of filteredTracks$ | async" 
-           class="track-item" 
-           cdkDrag
-           [cdkDragDisabled]="!isEditMode">
-        
-        <div class="track-card" [class.edit-mode]="isEditMode">
-          <!-- Drag Handle -->
-          <div class="drag-indicator" cdkDragHandle *ngIf="isEditMode">
-            <mat-icon>drag_indicator</mat-icon>
-          </div>
+  <!-- Tracks Grid -->
+  <div class="tracks-grid" cdkDropList (cdkDropListDropped)="onDrop($event)">
+    <div *ngFor="let track of filteredTracks$ | async" 
+         class="track-card"
+         [class.track-card--edit-mode]="isEditMode"
+         cdkDrag
+         [cdkDragDisabled]="!isEditMode"
+         (click)="viewTrackDetails(track)">
+      
+      <div class="track-card__drag-handle" *ngIf="isEditMode" cdkDragHandle>
+        <mat-icon>drag_indicator</mat-icon>
+      </div>
 
-          <!-- Album Art & Quick Actions -->
-          <div class="album-art" (click)="viewTrackDetails(track, $event)">
-            <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
-            <div class="quick-actions">
-              <button mat-mini-fab color="primary" (click)="playTrack(track, $event)">
-                <mat-icon>play_arrow</mat-icon>
-              </button>
-            </div>
-          </div>
+      <div class="track-card__artwork" [style.background-image]="'url(' + (track.thumbnailUrl || 'assets/default-cover.png') + ')'">
+        <div class="track-card__overlay">
+          <button mat-fab color="primary" (click)="playTrack(track, $event)">
+            <mat-icon>play_arrow</mat-icon>
+          </button>
+        </div>
+      </div>
 
-          <!-- Track Content -->
-          <div class="track-content">
-            <!-- Main Info -->
-            <div class="main-info">
-              <div class="title-artist" (click)="viewTrackDetails(track, $event)" style="cursor: pointer;">
-                <h3 class="title" [matTooltip]="track.title">{{ track.title }}</h3>
-                <p class="artist" [matTooltip]="track.artist">{{ track.artist }}</p>
-              </div>
-              <span class="category-badge" [class]="track.category">
-                {{ track.category | titlecase }}
-              </span>
-            </div>
-
-            <!-- Track Stats -->
-            <div class="track-stats">
-              <div class="stat">
-                <mat-icon>schedule</mat-icon>
-                <span>{{ track.duration | duration }}</span>
-              </div>
-              <div class="stat" *ngIf="track.releaseDate">
-                <mat-icon>event</mat-icon>
-                <span>{{ track.releaseDate | date:'yyyy' }}</span>
-              </div>
-            </div>
-
-            <!-- Action Bar -->
-            <div class="action-bar">
-              <div class="action-buttons">
-                <button mat-icon-button (click)="viewTrackDetails(track, $event)" 
-                        matTooltip="View Details" color="primary">
-                  <mat-icon>info</mat-icon>
-                </button>
-                <button mat-icon-button (click)="deleteTrack(track.id, track.title)" 
-                        matTooltip="Delete Track" color="warn">
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
+      <div class="track-card__content">
+        <div class="track-card__info">
+          <div class="track-card__header">
+            <div class="track-card__title-group">
+              <span class="track-card__category">{{ track.category | titlecase }}</span>
+              <h3 class="track-card__title">{{ track.title }}</h3>
+              <p class="track-card__artist">{{ track.artist }}</p>
             </div>
           </div>
         </div>
 
-        <!-- Drag Preview -->
-        <div class="track-placeholder" *cdkDragPlaceholder>
-          <mat-icon>album</mat-icon>
-          {{track.title}}
+        <div class="track-card__footer">
+          <div class="track-card__meta">
+            <span class="track-card__duration">
+              <mat-icon>schedule</mat-icon>
+              {{ track.duration | duration }}
+            </span>
+          </div>
+
+          <div class="track-card__actions">
+            <button mat-icon-button (click)="viewTrackDetails(track, $event)" matTooltip="View Details">
+              <mat-icon>info</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteTrack(track.id, track.title)" matTooltip="Delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Empty State -->
-    <div *ngIf="(filteredTracks$ | async)?.length === 0" class="empty-state">
-      <mat-icon>library_music</mat-icon>
-      <h2>No tracks found</h2>
-      <p>Try adjusting your filters or add some new tracks</p>
-    </div>
+  <!-- Empty State -->
+  <div *ngIf="(filteredTracks$ | async)?.length === 0" class="empty-state">
+    <mat-icon>library_music</mat-icon>
+    <h2>No tracks found</h2>
+    <p>Try adjusting your filters or add some music to your library</p>
+  </div>
 
-    <!-- Add this after the tracks grid -->
-    <mat-paginator
-      [length]="totalTracks$ | async"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="pageSizeOptions"
-      [pageIndex]="currentPage"
-      (page)="onPageChange($event)"
-      aria-label="Select page">
-    </mat-paginator>
-  </section>
+  <!-- Pagination -->
+  <mat-paginator 
+    [length]="totalTracks$ | async"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    [pageIndex]="currentPage"
+    (page)="onPageChange($event)"
+    class="paginator">
+  </mat-paginator>
 </div>

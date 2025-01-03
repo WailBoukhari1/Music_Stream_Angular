@@ -1,41 +1,48 @@
-    <div class="track-detail">
-      <ng-container *ngIf="track$ | async as track; else loading">
-        <mat-card class="track-info-card">
-          <div class="track-header">
-            <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
-            <div class="track-info">
-              <h1>{{ track.title }}</h1>
-              <p class="artist">{{ track.artist }}</p>
-              <p class="category">{{ track.category }}</p>
-              <p class="duration">{{ track.duration | duration }}</p>
-            </div>
-            <div class="actions">
-              <button mat-icon-button (click)="editTrack(track)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="confirmDelete(track)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </div>
-          </div>
-          
-          <mat-card-content>
-            <p class="description">{{ track.description }}</p>
-            <p class="metadata">Added: {{ track.addedDate | date }}</p>
-          </mat-card-content>
-          
-          <mat-card-actions>
-            <button mat-raised-button color="primary" (click)="playTrack(track)">
-              <mat-icon>play_arrow</mat-icon> Play
-            </button>
-          </mat-card-actions>
-        </mat-card>
-
-        <app-audio-player></app-audio-player>
-      </ng-container>
-
-      <ng-template #loading>
-        <mat-spinner></mat-spinner>
-      </ng-template>
+<div class="track-detail-container">
+  <ng-container *ngIf="track$ | async as track; else loading">
+    <div class="track-header">
+      <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title" class="track-thumbnail">
+      <div class="track-info">
+        <div class="track-meta">
+          <span class="track-category">{{ track.category | titlecase }}</span>
+          <span class="track-duration">
+            <mat-icon>schedule</mat-icon>
+            {{ (track.duration | duration:'mm:ss') || '0:00' }}
+          </span>
+        </div>
+        <h1 class="track-title">{{ track.title }}</h1>
+        <p class="track-artist">{{ track.artist }}</p>
+        <div class="track-actions">
+          <button mat-raised-button color="primary" (click)="playTrack(track)">
+            <mat-icon>play_arrow</mat-icon>
+            Play Track
+          </button>
+          <button mat-icon-button (click)="editTrack(track)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="confirmDelete(track)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </div>
     </div>
+
+    <div class="track-description">
+      <mat-card>
+        <mat-card-content>
+          <h2>About this track</h2>
+          <p>{{ track.description || 'No description available.' }}</p>
+          <p>Added on {{ track.addedDate | date:'longDate' }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </ng-container>
+
+  <ng-template #loading>
+    <div class="skeleton-loader">
+      <div class="skeleton-header"></div>
+      <div class="skeleton-body"></div>
+    </div>
+  </ng-template>
+</div>
  

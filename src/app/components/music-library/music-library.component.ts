@@ -26,14 +26,24 @@ import * as TrackActions from '../../store/track/track.actions';
 import { selectAllTracks } from '../../store/track/track.selectors';
 import { Router } from '@angular/router';
 import * as PlayerActions from '../../store/player/player.actions';
+import { TrackState } from '../../store/track/track.reducer';
 
 @Component({
   selector: 'app-music-library',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, DragDropModule, DurationPipe,
-    MatFormFieldModule, MatInputModule, MatSelectModule, MatIconModule,
-    MatCardModule, MatButtonModule, MatDatepickerModule, MatNativeDateModule,
+    CommonModule,
+    ReactiveFormsModule,
+    DragDropModule,
+    DurationPipe,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatIconModule,
+    MatCardModule,
+    MatButtonModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     MatTooltipModule,
     MatPaginatorModule,
   ],
@@ -47,22 +57,19 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
   // Filter Controls
   filterForm = new FormGroup({
     search: new FormControl(''),
-    category: new FormControl(''),
+    category: new FormControl<'pop' | 'rock' | 'rap' | 'cha3bi' | ''>(''),
     duration: new FormControl(''),
-    year: new FormControl(''),
+    sortBy: new FormControl('addedDate'),
+    sortDirection: new FormControl('desc')
   });
 
   // Filter Options
-  categories = ['pop', 'rock', 'rap', 'cha3bi'];
+  categories: ('pop' | 'rock' | 'rap' | 'cha3bi')[] = ['pop', 'rock', 'rap', 'cha3bi'];
   durationRanges = [
     { value: 'short', label: 'Short (< 3 min)', max: 180 },
     { value: 'medium', label: 'Medium (3-5 min)', min: 180, max: 300 },
     { value: 'long', label: 'Long (> 5 min)', min: 300 }
   ];
-  years = Array.from(
-    { length: new Date().getFullYear() - 1959 }, 
-    (_, i) => new Date().getFullYear() - i
-  );
 
   // UI State
   isEditMode = false;
@@ -93,7 +100,7 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
   );
 
   constructor(
-    private store: Store,
+    private store: Store<{ tracks: TrackState }>,
     private audioService: AudioService,
     private router: Router,
     private indexedDBService: IndexedDBService,
@@ -110,8 +117,10 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
   }
 
   // Track Actions
-  viewTrackDetails(track: Track, event: Event) {
-    event.stopPropagation(); // Prevent event bubbling
+  viewTrackDetails(track: Track, event?: Event) {
+    if (event) {
+      event.stopPropagation(); // Prevent event bubbling if called from a button
+    }
     this.router.navigate(['/track', track.id]);
   }
 
@@ -190,12 +199,19 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
       const durationMatch = !filters.duration || 
         this.matchDuration(track.duration, filters.duration);
 
-      const yearMatch = !filters.year || 
-        (track.releaseDate ? 
-          new Date(track.releaseDate).getFullYear().toString() === filters.year : 
-          false);
-
-      return searchMatch && categoryMatch && durationMatch && yearMatch;
+      return searchMatch && categoryMatch && durationMatch;
+    }).sort((a, b) => {
+      const direction = filters.sortDirection === 'desc' ? -1 : 1;
+      switch (filters.sortBy) {
+        case 'title':
+          return direction * a.title.localeCompare(b.title);
+        case 'artist':
+          return direction * a.artist.localeCompare(b.artist);
+        case 'duration':
+          return direction * (a.duration - b.duration);
+        default:
+          return direction * (new Date(a.addedDate).getTime() - new Date(b.addedDate).getTime());
+      }
     });
   }
 
@@ -217,9 +233,28 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
 
   // Add a new method for playing track
   playTrack(track: Track, event: Event) {
-    event.stopPropagation();
+    event.stopPropagation(); // Prevent the card click event from firing
     this.router.navigate(['/track', track.id]).then(() => {
-      this.store.dispatch(PlayerActions.play());
+      this.audioService.playTrack(track);
+    });
+  }
+
+  // Add sorting functionality
+  sortTracks(tracks: Track[]): Track[] {
+    return tracks.sort((a, b) => {
+      const direction = this.filterForm.get('sortDirection')?.value === 'desc' ? -1 : 1;
+      const sortBy = this.filterForm.get('sortBy')?.value;
+
+      switch (sortBy) {
+        case 'title':
+          return direction * a.title.localeCompare(b.title);
+        case 'artist':
+          return direction * a.artist.localeCompare(b.artist);
+        case 'duration':
+          return direction * (a.duration - b.duration);
+        default:
+          return direction * (new Date(a.addedDate).getTime() - new Date(b.addedDate).getTime());
+      }
     });
   }
 } 

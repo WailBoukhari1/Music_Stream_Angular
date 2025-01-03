@@ -1,6 +1,11 @@
 import { createAction, props } from '@ngrx/store';
 import { Track } from '../../models/track.model';
 
+export const loadTrack = createAction(
+  '[Track] Load Track',
+  props<{ id: string }>()
+);
+
 export const loadTracks = createAction('[Track] Load Tracks');
 export const loadTracksSuccess = createAction(
   '[Track] Load Tracks Success',
@@ -8,6 +13,16 @@ export const loadTracksSuccess = createAction(
 );
 export const loadTracksFailure = createAction(
   '[Track] Load Tracks Failure',
+  props<{ error: any }>()
+);
+
+export const loadTrackSuccess = createAction(
+  '[Track] Load Track Success',
+  props<{ track: Track }>()
+);
+
+export const loadTrackFailure = createAction(
+  '[Track] Load Track Failure',
   props<{ error: any }>()
 );
 
@@ -19,6 +34,16 @@ export const addTrack = createAction(
 export const deleteTrack = createAction(
   '[Track] Delete Track',
   props<{ id: string }>()
+);
+
+export const deleteTrackSuccess = createAction(
+  '[Track] Delete Track Success',
+  props<{ id: string }>()
+);
+
+export const deleteTrackFailure = createAction(
+  '[Track] Delete Track Failure',
+  props<{ error: string }>()
 );
 
 export const playbackError = createAction(

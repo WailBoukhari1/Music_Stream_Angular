@@ -1,91 +1,93 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, Subject, takeUntil } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil, catchError } from 'rxjs/operators';
 import { Track } from '../../models/track.model';
-import { ActivatedRoute } from '@angular/router';
-import { AudioPlayerComponent } from '../audio-player/audio-player.component';
-import { DurationPipe } from '../../pipes/duration.pipe';
-import { AudioService } from '../../services/audio.service';
 import * as TrackSelectors from '../../store/track/track.selectors';
 import * as TrackActions from '../../store/track/track.actions';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Router } from '@angular/router';
+import { TrackState } from '../../store/track/track.reducer';
+import { MatIconModule } from '@angular/material/icon';
+import { CommonModule } from '@angular/common';
+import { DurationPipe } from '../../pipes/duration.pipe';
+import { MatDialog } from '@angular/material/dialog';
 import { EditTrackDialogComponent } from '../edit-track-dialog/edit-track-dialog.component';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { MatCardModule } from '@angular/material/card';
+import { AudioService } from '../../services/audio.service';
 import * as PlayerActions from '../../store/player/player.actions';
-import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-track-detail',
-  standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    AudioPlayerComponent,
-    DurationPipe,
-    MatProgressSpinnerModule,
-    MatDialogModule
-  ],
   templateUrl: './track-detail.component.html',
-  styleUrls: ['./track-detail.component.scss']
+  styleUrls: ['./track-detail.component.scss'],
+  standalone: true,
+  imports: [MatIconModule, CommonModule, DurationPipe, MatCardModule]
 })
 export class TrackDetailComponent implements OnInit, OnDestroy {
-  track$: Observable<Track | undefined>;
+  track$: Observable<Track | null | undefined> = new Observable();
+  error: string | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
-    private store: Store,
     private route: ActivatedRoute,
-    private audioService: AudioService,
+    private router: Router,
+    private store: Store<{ tracks: TrackState }>,
     private dialog: MatDialog,
-    private router: Router
-  ) {
-    const trackId = this.route.snapshot.paramMap.get('id') || '';
-    this.track$ = this.store.select(TrackSelectors.selectTrackById(trackId))
-      .pipe(takeUntil(this.destroy$));
-  }
+    private audioService: AudioService
+  ) {}
 
   ngOnInit() {
-    this.store.dispatch(TrackActions.loadTracks());
+    this.route.paramMap.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(params => {
+      const trackId = params.get('id');
+      if (trackId) {
+        console.log('Loading track with ID:', trackId);
+        this.store.dispatch(TrackActions.loadTrack({ id: trackId }));
+        this.track$ = this.store.select(TrackSelectors.selectCurrentTrack, { id: trackId });
+        this.track$.pipe(
+          takeUntil(this.destroy$)
+        ).subscribe({
+          next: track => {
+            console.log('Full Track Object:', track);
+            if (track) {
+              console.log('Track duration type:', typeof track.duration);
+              console.log('Track duration value:', track.duration);
+            }
+            if (!track) {
+              this.error = 'Track not found';
+            }
+          },
+          error: err => {
+            console.error('Error loading track:', err);
+            this.error = 'Error loading track';
+          }
+        });
+      }
+    });
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    this.audioService.pause();
-    this.store.dispatch(PlayerActions.stop());
-    this.store.dispatch(PlayerActions.setTrack({ track: null }));
   }
 
-  playTrack(track: Track) {
+  playTrack(track: Track): void {
+    this.store.dispatch(PlayerActions.setTrack({ track }));
     this.audioService.playTrack(track);
   }
 
-
-  editTrack(track: Track) {
-    const dialogRef = this.dialog.open(EditTrackDialogComponent, {
+  editTrack(track: Track): void {
+    this.dialog.open(EditTrackDialogComponent, {
+      width: '500px',
       data: track
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.store.dispatch(TrackActions.updateTrack({ track: result }));
-      }
     });
   }
 
-  confirmDelete(track: Track) {
+  confirmDelete(track: Track): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: 'Delete Track',
-        message: `Are you sure you want to delete "${track.title}"?`
-      }
+      data: { title: 'Delete Track', message: `Are you sure you want to delete "${track.title}"?` }
     });
 
     dialogRef.afterClosed().subscribe(result => {

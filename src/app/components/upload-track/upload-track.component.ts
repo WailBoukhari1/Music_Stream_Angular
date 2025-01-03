@@ -36,7 +36,7 @@ export class UploadTrackComponent {
     title: ['', [Validators.required, Validators.maxLength(50)]],
     artist: ['', [Validators.required]],
     description: ['', [Validators.maxLength(200)]],
-    category: ['', [Validators.required]],
+    category: ['pop' as const, [Validators.required]],
     duration: [0]
   });
 
@@ -107,8 +107,16 @@ export class UploadTrackComponent {
   async uploadTrack() {
     if (this.uploadForm.valid && this.selectedFile) {
       this.isUploading = true;
+      this.uploadProgress = 0;
       
       try {
+        // Simulate upload progress
+        const interval = setInterval(() => {
+          if (this.uploadProgress < 90) {
+            this.uploadProgress += 10;
+          }
+        }, 500);
+
         const title = this.uploadForm.get('title')?.value ?? '';
         const artist = this.uploadForm.get('artist')?.value ?? '';
 
@@ -131,12 +139,10 @@ export class UploadTrackComponent {
           title: title,
           artist: artist,
           description: this.uploadForm.get('description')?.value || '',
-          category: this.uploadForm.get('category')?.value || '',
+          category: (this.uploadForm.get('category')?.value || 'pop') as 'pop' | 'rock' | 'rap' | 'cha3bi',
           addedDate: new Date(),
           duration: 0,
-          audioUrl: '',
-          thumbnailUrl: this.imagePreview || undefined,
-          releaseDate: new Date().toISOString()
+          thumbnailUrl: this.imagePreview || undefined
         };
 
         this.store.dispatch(TrackActions.addTrack({ 
@@ -149,7 +155,11 @@ export class UploadTrackComponent {
         this.snackBar.open('Track uploaded successfully', 'Close', {
           duration: 3000
         });
+
+        clearInterval(interval);
+        this.uploadProgress = 100;
       } catch (error) {
+        this.uploadProgress = 0;
         console.error('Upload failed:', error);
         this.snackBar.open('Upload failed. Please try again.', 'Close', {
           duration: 3000
@@ -161,5 +171,42 @@ export class UploadTrackComponent {
         duration: 3000
       });
     }
+  }
+
+  getErrorMessage(controlName: string): string {
+    const control = this.uploadForm.get(controlName);
+    if (control?.hasError('required')) {
+      return `${controlName.charAt(0).toUpperCase() + controlName.slice(1)} is required`;
+    }
+    if (control?.hasError('maxlength')) {
+      const maxLength = controlName === 'title' ? 50 : 200;
+      return `${controlName.charAt(0).toUpperCase() + controlName.slice(1)} cannot exceed ${maxLength} characters`;
+    }
+    return '';
+  }
+
+  async validateFiles(audioFile: File, imageFile?: File): Promise<boolean> {
+    // Audio file validation
+    if (audioFile.size > 15 * 1024 * 1024) {
+      this.snackBar.open('Audio file must not exceed 15MB', 'Close', { duration: 3000 });
+      return false;
+    }
+
+    const validAudioTypes = ['audio/mp3', 'audio/wav', 'audio/ogg'];
+    if (!validAudioTypes.includes(audioFile.type)) {
+      this.snackBar.open('Only MP3, WAV, and OGG formats are allowed', 'Close', { duration: 3000 });
+      return false;
+    }
+
+    // Image file validation
+    if (imageFile) {
+      const validImageTypes = ['image/jpeg', 'image/png'];
+      if (!validImageTypes.includes(imageFile.type)) {
+        this.snackBar.open('Only JPEG and PNG images are allowed', 'Close', { duration: 3000 });
+        return false;
+      }
+    }
+
+    return true;
   }
 }

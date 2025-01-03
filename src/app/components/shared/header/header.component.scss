@@ -1,18 +1,99 @@
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(18, 18, 18, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(220, 20, 60, 0.2);
+}
 
-    mat-toolbar {
-      border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  gap: 0.5rem;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #dc143c;
+  }
+
+  .brand-icon {
+    color: #dc143c;
+    font-size: 2rem;
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .brand-text {
+    font-size: 1.5rem;
+    font-weight: 500;
+  }
+}
+
+.nav-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.87);
+    transition: all 0.3s ease;
+
+    mat-icon {
+      opacity: 0.7;
     }
 
-    .brand {
-      font-size: 1.2rem;
-      text-decoration: none;
-    }
+    &:hover, &.active {
+      background: rgba(220, 20, 60, 0.1);
+      color: #dc143c;
 
-    .spacer {
-      flex: 1 1 auto;
+      mat-icon {
+        opacity: 1;
+      }
     }
+  }
+}
 
-    button mat-icon {
-      margin-right: 8px;
-    }
+.upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  height: 40px;
+  border-radius: 20px;
+  font-weight: 500;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  mat-icon {
+    margin-right: 4px;
+  }
+}
   

@@ -1,6 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import * as PlayerActions from './player.actions';
-import { Track, PlayerState as PlaybackState } from '../../models/track.model';
+import { Track, PlayerState as PlaybackState, LoadingState } from '../../models/track.model';
 
 export interface PlayerState {
   currentTrack: Track | null;
@@ -8,8 +8,8 @@ export interface PlayerState {
   currentTime: number;
   volume: number;
   error: string | null;
-  loadingState: 'loading' | 'error' | 'success';
-  playbackState: string;
+  loadingState: LoadingState;
+  playbackState: PlaybackState;
   shuffle: boolean;
   repeat: boolean;
 }
@@ -31,7 +31,8 @@ export const playerReducer = createReducer(
   on(PlayerActions.play, state => ({ 
     ...state, 
     isPlaying: true,
-    playbackState: 'playing' as PlaybackState
+    playbackState: 'playing' as PlaybackState,
+    loadingState: 'success' as LoadingState
   })),
   on(PlayerActions.pause, state => ({ 
     ...state, 
@@ -63,12 +64,4 @@ export const playerReducer = createReducer(
     error: message,
     playbackState: 'stopped' as PlaybackState
   })),
-  on(PlayerActions.toggleShuffle, (state) => ({
-    ...state,
-    shuffle: !state.shuffle
-  })),
-  on(PlayerActions.toggleRepeat, (state) => ({
-    ...state,
-    repeat: !state.repeat
-  }))
 ); 

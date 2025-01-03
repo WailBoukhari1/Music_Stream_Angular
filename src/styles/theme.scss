@@ -1,0 +1,52 @@
+@use '@angular/material' as mat;
+
+// Custom crimson palette
+$crimson-palette: (
+  50: #ffe1e1,
+  100: #ffb4b4,
+  200: #ff8282,
+  300: #ff5050,
+  400: #ff2d2d,
+  500: #dc143c, // Crimson main
+  600: #cc1236,
+  700: #b80f2f,
+  800: #a50c28,
+  900: #92091b,
+  contrast: (
+    50: rgba(black, 0.87),
+    100: rgba(black, 0.87),
+    200: rgba(black, 0.87),
+    300: white,
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+  )
+);
+
+// Define the palettes
+$primary: mat.define-palette($crimson-palette);
+$accent: mat.define-palette(mat.$grey-palette);
+$warn: mat.define-palette(mat.$red-palette);
+
+// Create the dark theme
+$dark-theme: mat.define-dark-theme((
+  color: (
+    primary: $primary,
+    accent: $accent,
+    warn: $warn,
+  ),
+  typography: mat.define-typography-config(),
+  density: 0,
+));
+
+// Apply the dark theme
+@include mat.all-component-themes($dark-theme);
+
+// Global dark theme styles
+body {
+  background-color: #121212;
+  color: #ffffff;
+} 

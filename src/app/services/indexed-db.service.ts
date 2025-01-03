@@ -1,93 +1,96 @@
 import { Injectable } from '@angular/core';
 import { Track } from '../models/track.model';
+import { FileValidationService } from '../services/file-validation.service';
+
+interface StorageStats {
+  totalSize: number;
+  trackCount: number;
+  audioSize: number;
+  thumbnailSize: number;
+}
+
+interface AudioFileRecord {
+  id: string;
+  file: File;
+  size: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class IndexedDBService {
-  private dbName = 'musicPlayerDB';
-  private dbVersion = 3;
-  private db: Promise<IDBDatabase>;
-  private readonly MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB in bytes
-  private readonly VALID_AUDIO_TYPES = [
-    'audio/mp3',
-    'audio/mpeg',  // Common MIME type for MP3
-    'audio/wav',
-    'audio/wave',  // Alternative WAV MIME type
-    'audio/x-wav',
-    'audio/ogg',
-    'audio/vorbis'
-  ];
+  private readonly DB_CONFIG = {
+    name: 'musicPlayerDB',
+    version: 3,
+    stores: ['tracks', 'audioFiles', 'thumbnails']
+  };
 
-  constructor() {
+  private readonly FILE_CONSTRAINTS = {
+    maxSize: 15 * 1024 * 1024, // 15MB in bytes
+    validAudioTypes: [
+      'audio/mp3',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/wave',
+      'audio/x-wav',
+      'audio/ogg',
+      'audio/vorbis'
+    ] as const,
+    validExtensions: ['.mp3', '.wav', '.ogg'] as const
+  };
+
+  private db: Promise<IDBDatabase>;
+
+  constructor(private fileValidationService: FileValidationService) {
     this.db = this.initDB();
   }
 
+  // Database Initialization
   private initDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
+      const request = indexedDB.open(this.DB_CONFIG.name, this.DB_CONFIG.version);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = () => {
         const db = request.result;
-        
-        if (!db.objectStoreNames.contains('tracks')) {
-          db.createObjectStore('tracks', { keyPath: 'id' });
-        }
-        
-        if (!db.objectStoreNames.contains('audioFiles')) {
-          db.createObjectStore('audioFiles', { keyPath: 'id' });
-        }
-
-        if (!db.objectStoreNames.contains('thumbnails')) {
-          db.createObjectStore('thumbnails', { keyPath: 'id' });
-        }
+        this.DB_CONFIG.stores.forEach(storeName => {
+          if (!db.objectStoreNames.contains(storeName)) {
+            db.createObjectStore(storeName, { keyPath: 'id' });
+          }
+        });
       };
     });
   }
 
+  // Track Management
   async addTrack(track: Track, audioFile: File, thumbnail?: File | null): Promise<void> {
-    // Validate file size and format before proceeding
-    if (!await this.validateFileSize(audioFile)) {
-      throw new Error('Audio file size exceeds 15MB limit');
-    }
-    if (!await this.validateAudioFormat(audioFile)) {
-      throw new Error('Invalid audio format. Supported formats: MP3, WAV, OGG');
-    }
-    if (thumbnail && !await this.validateFileSize(thumbnail)) {
-      throw new Error('Thumbnail file size exceeds 15MB limit');
-    }
-
+    await this.validateFile(audioFile, thumbnail);
     const db = await this.db;
     
     return new Promise((resolve, reject) => {
       try {
-        const transaction = db.transaction(['tracks', 'audioFiles', 'thumbnails'], 'readwrite');
+        const transaction = db.transaction(this.DB_CONFIG.stores, 'readwrite');
         
-        const tracksStore = transaction.objectStore('tracks');
-        const audioStore = transaction.objectStore('audioFiles');
-        const thumbnailStore = transaction.objectStore('thumbnails');
-
-        // Store the audio file with size information
-        audioStore.put({
+        // Store audio file
+        transaction.objectStore('audioFiles').put({
           id: track.id,
           file: audioFile,
           size: audioFile.size
         });
 
-        // Store the thumbnail if provided
+        // Store thumbnail if provided
         if (thumbnail) {
-          thumbnailStore.put({
+          transaction.objectStore('thumbnails').put({
             id: track.id,
             file: thumbnail,
             size: thumbnail.size
           });
         }
 
-        // Store the track metadata with file sizes
-        tracksStore.put({
+        // Store track metadata
+        transaction.objectStore('tracks').put({
           ...track,
           audioSize: audioFile.size,
           thumbnailSize: thumbnail?.size
@@ -103,144 +106,43 @@ export class IndexedDBService {
 
   async getAllTracks(): Promise<Track[]> {
     const db = await this.db;
-    return new Promise((resolve, reject) => {
-      try {
-        const transaction = db.transaction(['tracks'], 'readonly');
-        const store = transaction.objectStore('tracks');
-        const request = store.getAll();
-
-        request.onsuccess = () => {
-          console.log('Tracks loaded:', request.result); // Debug log
-          resolve(request.result);
-        };
-        request.onerror = () => reject(request.error);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  async deleteTrack(id: string): Promise<void> {
-    const db = await this.db;
-    
-    return new Promise((resolve, reject) => {
-      try {
-        const transaction = db.transaction(['tracks', 'audioFiles'], 'readwrite');
-        
-        const tracksStore = transaction.objectStore('tracks');
-        const audioStore = transaction.objectStore('audioFiles');
-
-        tracksStore.delete(id);
-        audioStore.delete(id);
-
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  async getAudioFile(trackId: string): Promise<File> {
-    const db = await this.db;
-    
-    return new Promise((resolve, reject) => {
-      try {
-        const transaction = db.transaction('audioFiles', 'readonly');
-        const store = transaction.objectStore('audioFiles');
-        const request = store.get(trackId);
-
-        request.onsuccess = () => resolve(request.result.file);
-        request.onerror = () => reject(request.error);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  async updateTrackOrders(tracks: Track[]): Promise<void> {
-    const db = await this.db;
-    
-    return new Promise((resolve, reject) => {
-      try {
-        const transaction = db.transaction(['tracks'], 'readwrite');
-        const store = transaction.objectStore('tracks');
-        
-        tracks.forEach(track => {
-          store.put(track);
-        });
-
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-
-  async checkDuplicateTrack(title: string, artist: string): Promise<boolean> {
-    const db = await this.db;
-    
-    return new Promise((resolve, reject) => {
-      try {
-        const transaction = db.transaction(['tracks'], 'readonly');
-        const store = transaction.objectStore('tracks');
-        const request = store.getAll();
-
-        request.onsuccess = () => {
-          const tracks: Track[] = request.result;
-          const isDuplicate = tracks.some(track => 
-            track.title.toLowerCase() === title.toLowerCase() && 
-            track.artist.toLowerCase() === artist.toLowerCase()
-          );
-          resolve(isDuplicate);
-        };
-        request.onerror = () => reject(request.error);
-      } catch (error) {
-        reject(error);
-      }
-    });
+    return this.performTransaction('tracks', 'readonly', store => store.getAll());
   }
 
   async updateTrack(track: Track): Promise<Track> {
     const db = await this.db;
-    const tx = db.transaction(['tracks'], 'readwrite');
-    const store = tx.objectStore('tracks');
-    await store.put(track);
+    await this.performTransaction('tracks', 'readwrite', store => store.put(track));
     return track;
   }
 
-  async validateFileSize(file: File): Promise<boolean> {
-    return file.size <= this.MAX_FILE_SIZE;
+  async deleteTrack(id: string): Promise<void> {
+    await this.clearOldData(id);
   }
 
-  async validateAudioFormat(file: File): Promise<boolean> {
-    // Check if the file type matches any of our valid types
-    if (this.VALID_AUDIO_TYPES.includes(file.type)) {
-      return true;
-    }
+  async updateTrackOrders(tracks: Track[]): Promise<void> {
+    const db = await this.db;
+    return this.performTransaction('tracks', 'readwrite', store => {
+      tracks.forEach(track => store.put(track));
+    });
+  }
 
-    // Check file extension as fallback
-    const fileName = file.name.toLowerCase();
-    const validExtensions = ['.mp3', '.wav', '.ogg'];
-    return validExtensions.some(ext => fileName.endsWith(ext));
+  // File Management
+  async getAudioFile(trackId: string): Promise<File> {
+    const result = await this.performTransaction<AudioFileRecord>(
+      'audioFiles', 
+      'readonly', 
+      store => store.get(trackId)
+    );
+    return result.file;
   }
 
   async getThumbnail(trackId: string): Promise<File | null> {
-    const db = await this.db;
-    
-    return new Promise((resolve, reject) => {
-      try {
-        const transaction = db.transaction('thumbnails', 'readonly');
-        const store = transaction.objectStore('thumbnails');
-        const request = store.get(trackId);
-
-        request.onsuccess = () => resolve(request.result?.file || null);
-        request.onerror = () => reject(this.handleError(request.error));
-      } catch (error) {
-        reject(this.handleError(error));
-      }
-    });
+    const result = await this.performTransaction<{ file: File } | undefined>(
+      'thumbnails',
+      'readonly',
+      store => store.get(trackId)
+    );
+    return result?.file || null;
   }
 
   async getTrackWithFiles(trackId: string): Promise<{ 
@@ -252,26 +154,23 @@ export class IndexedDBService {
     
     return new Promise((resolve, reject) => {
       try {
-        const transaction = db.transaction(['tracks', 'audioFiles', 'thumbnails'], 'readonly');
-        
-        const tracksStore = transaction.objectStore('tracks');
-        const audioStore = transaction.objectStore('audioFiles');
-        const thumbnailStore = transaction.objectStore('thumbnails');
-
-        const trackRequest = tracksStore.get(trackId);
-        const audioRequest = audioStore.get(trackId);
-        const thumbnailRequest = thumbnailStore.get(trackId);
+        const transaction = db.transaction(this.DB_CONFIG.stores, 'readonly');
+        const requests = {
+          track: transaction.objectStore('tracks').get(trackId),
+          audio: transaction.objectStore('audioFiles').get(trackId),
+          thumbnail: transaction.objectStore('thumbnails').get(trackId)
+        };
 
         transaction.oncomplete = () => {
-          if (!trackRequest.result || !audioRequest.result) {
+          if (!requests.track.result || !requests.audio.result) {
             reject(new Error('Track or audio file not found'));
             return;
           }
 
           resolve({
-            track: trackRequest.result,
-            audioFile: audioRequest.result.file,
-            thumbnail: thumbnailRequest.result?.file || null
+            track: requests.track.result,
+            audioFile: requests.audio.result.file,
+            thumbnail: requests.thumbnail.result?.file || null
           });
         };
         
@@ -282,8 +181,122 @@ export class IndexedDBService {
     });
   }
 
+  // Validation Methods
+  async checkDuplicateTrack(title: string, artist: string): Promise<boolean> {
+    const tracks = await this.getAllTracks();
+    return tracks.some(track => 
+      track.title.toLowerCase() === title.toLowerCase() && 
+      track.artist.toLowerCase() === artist.toLowerCase()
+    );
+  }
+
+  private async validateFile(audioFile: File, thumbnail?: File | null): Promise<void> {
+    // Validate audio file
+    const audioValidation = this.fileValidationService.validateAudioFile(audioFile);
+    if (!audioValidation.isValid) {
+      throw new Error(audioValidation.error);
+    }
+
+    // Validate thumbnail if provided
+    if (thumbnail) {
+      const imageValidation = this.fileValidationService.validateImageFile(thumbnail);
+      if (!imageValidation.isValid) {
+        throw new Error(imageValidation.error);
+      }
+
+      const dimensionsValidation = await this.fileValidationService.validateImageDimensions(thumbnail);
+      if (!dimensionsValidation.isValid) {
+        throw new Error(dimensionsValidation.error);
+      }
+    }
+  }
+
+  // Database Management
+  async getStorageStats(): Promise<StorageStats> {
+    const db = await this.db;
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(this.DB_CONFIG.stores, 'readonly');
+        const stats: StorageStats = {
+          totalSize: 0,
+          trackCount: 0,
+          audioSize: 0,
+          thumbnailSize: 0
+        };
+
+        const requests = {
+          tracks: transaction.objectStore('tracks').getAll(),
+          audio: transaction.objectStore('audioFiles').getAll(),
+          thumbnails: transaction.objectStore('thumbnails').getAll()
+        };
+
+        transaction.oncomplete = () => {
+          stats.trackCount = requests.tracks.result.length;
+          stats.audioSize = requests.audio.result.reduce((sum, item) => sum + item.size, 0);
+          stats.thumbnailSize = requests.thumbnails.result.reduce((sum, item) => sum + (item?.size || 0), 0);
+          stats.totalSize = stats.audioSize + stats.thumbnailSize;
+          resolve(stats);
+        };
+        
+        transaction.onerror = () => reject(this.handleError(transaction.error));
+      } catch (error) {
+        reject(this.handleError(error));
+      }
+    });
+  }
+
+  async clearDatabase(): Promise<void> {
+    const db = await this.db;
+    return this.performTransaction(this.DB_CONFIG.stores, 'readwrite', store => store.clear());
+  }
+
+  private async clearOldData(trackId: string): Promise<void> {
+    const db = await this.db;
+    return this.performTransaction(this.DB_CONFIG.stores, 'readwrite', store => store.delete(trackId));
+  }
+
+  // Utility Methods
+  private async performTransaction<T>(
+    storeNames: string | string[],
+    mode: IDBTransactionMode,
+    operation: (store: IDBObjectStore) => IDBRequest<T> | void
+  ): Promise<T> {
+    const db = await this.db;
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const transaction = db.transaction(storeNames, mode);
+        const store = Array.isArray(storeNames) 
+          ? transaction.objectStore(storeNames[0])
+          : transaction.objectStore(storeNames);
+        
+        const request = operation(store) as IDBRequest<T>;
+        
+        transaction.oncomplete = () => resolve(request?.result);
+        transaction.onerror = () => reject(this.handleError(transaction.error));
+      } catch (error) {
+        reject(this.handleError(error));
+      }
+    });
+  }
+
   private handleError(error: any): Error {
     console.error('IndexedDB Error:', error);
     return new Error(`IndexedDB operation failed: ${error.message || 'Unknown error'}`);
+  }
+
+  async getTrackById(id: string): Promise<Track> {
+    const track = await this.performTransaction<Track>(
+      'tracks',
+      'readonly',
+      store => store.get(id)
+    );
+    
+    if (!track) {
+      throw new Error(`Track with id ${id} not found`);
+    }
+    
+    return track;
   }
 } 

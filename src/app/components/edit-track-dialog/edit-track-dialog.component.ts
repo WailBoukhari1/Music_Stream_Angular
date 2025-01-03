@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Track } from '../../models/track.model';
+import { VALIDATION_CONSTANTS } from '../../constants/validation.constants';
 
 @Component({
   selector: 'app-edit-track-dialog',
@@ -76,10 +77,28 @@ export class EditTrackDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: Track
   ) {
     this.form = this.fb.group({
-      title: [data.title, Validators.required],
-      artist: [data.artist, Validators.required],
+      title: [
+        data.title, 
+        [
+          Validators.required,
+          Validators.maxLength(VALIDATION_CONSTANTS.TITLE.MAX_LENGTH),
+          Validators.minLength(VALIDATION_CONSTANTS.TITLE.MIN_LENGTH)
+        ]
+      ],
+      artist: [
+        data.artist, 
+        [
+          Validators.required,
+          Validators.maxLength(VALIDATION_CONSTANTS.TITLE.MAX_LENGTH)
+        ]
+      ],
       category: [data.category, Validators.required],
-      description: [data.description]
+      description: [
+        data.description,
+        [
+          Validators.maxLength(VALIDATION_CONSTANTS.DESCRIPTION.MAX_LENGTH)
+        ]
+      ]
     });
   }
 
@@ -90,5 +109,16 @@ export class EditTrackDialogComponent {
         ...this.form.value
       });
     }
+  }
+
+  getErrorMessage(controlName: string): string {
+    const control = this.form.get(controlName);
+    if (!control?.errors) return '';
+
+    const errors = control.errors;
+    if (errors['required']) return `${controlName} is required`;
+    if (errors['maxlength']) return `${controlName} exceeds maximum length`;
+    if (errors['minlength']) return `${controlName} is too short`;
+    return 'Invalid input';
   }
 } 

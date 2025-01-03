@@ -1,15 +1,26 @@
+<mat-toolbar>
+  <div class="header-container">
+    <a class="brand" routerLink="/">
+      <mat-icon class="brand-icon">music_note</mat-icon>
+      <span class="brand-text">Music Library</span>
+    </a>
 
-    <mat-toolbar>
-      <a mat-button routerLink="/library" class="brand">
-        <mat-icon>music_note</mat-icon>
-        Music Player
-      </a>
+    <div class="nav-section">
+      <nav class="nav-links">
+        <a mat-button routerLink="/library" routerLinkActive="active">
+          <mat-icon>library_music</mat-icon>
+          <span>Library</span>
+        </a>
+        <a mat-button routerLink="/playlists" routerLinkActive="active">
+          <mat-icon>playlist_play</mat-icon>
+          <span>Playlists</span>
+        </a>
+      </nav>
 
-      <span class="spacer"></span>
-
-      <button mat-raised-button color="primary" (click)="openUploadDialog()">
-        <mat-icon>upload</mat-icon>
-        Upload Music
+      <button mat-flat-button color="primary" (click)="openUploadDialog()" class="upload-btn">
+        <mat-icon>add</mat-icon>
+        <span>Add Track</span>
       </button>
-    </mat-toolbar>
- 
+    </div>
+  </div>
+</mat-toolbar>

@@ -2,14 +2,12 @@ export interface Track {
   id: string;
   title: string;
   artist: string;
-  description: string;
+  description?: string;
   addedDate: Date;
   duration: number;
-  category: 'pop' | 'rock' | 'rap' | 'cha3bi' | string;
+  category: 'pop' | 'rock' | 'rap' | 'cha3bi';
   thumbnailUrl?: string;
-  audioUrl: string;
-  order?: number; // For drag & drop functionality
-  releaseDate?: string;
+  order?: number;
 }
 
 export type PlayerState = 'playing' | 'paused' | 'buffering' | 'stopped';
