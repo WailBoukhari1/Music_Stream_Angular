@@ -14,6 +14,7 @@ import { FileValidationService } from '../../services/file-validation.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IndexedDBService } from '../../services/indexed-db.service';
 import { AudioService } from '../../services/audio.service';
+import { FileSizePipe } from '../../pipes/file-size.pipe';
 
 @Component({
   selector: 'app-upload-track',
@@ -26,7 +27,8 @@ import { AudioService } from '../../services/audio.service';
     MatInputModule,
     MatSelectModule,
     MatProgressBarModule,
-    MatIconModule
+    MatIconModule,
+    FileSizePipe
   ],
   templateUrl: './upload-track.component.html',
   styleUrls: ['./upload-track.component.scss']
@@ -108,68 +110,49 @@ export class UploadTrackComponent {
     if (this.uploadForm.valid && this.selectedFile) {
       this.isUploading = true;
       this.uploadProgress = 0;
-      
+
       try {
-        // Simulate upload progress
-        const interval = setInterval(() => {
+        const progressInterval = setInterval(() => {
           if (this.uploadProgress < 90) {
             this.uploadProgress += 10;
           }
-        }, 500);
+        }, 300);
 
-        const title = this.uploadForm.get('title')?.value ?? '';
-        const artist = this.uploadForm.get('artist')?.value ?? '';
-
-        // Check for duplicates
-        const isDuplicate = await this.indexedDB.checkDuplicateTrack(title, artist);
-        if (isDuplicate) {
-          this.snackBar.open(
-            'A track with the same title and artist already exists!', 
-            'Close', 
-            { duration: 5000 }
-          );
-          this.isUploading = false;
-          return;
-        }
-
-        console.log('Starting upload for file:', this.selectedFile);
+        // Get duration using AudioService
+        const duration = await this.audioService.calculateDuration(this.selectedFile);
 
         const track: Track = {
           id: crypto.randomUUID(),
-          title: title,
-          artist: artist,
+          title: this.uploadForm.get('title')?.value || '',
+          artist: this.uploadForm.get('artist')?.value || '',
           description: this.uploadForm.get('description')?.value || '',
           category: (this.uploadForm.get('category')?.value || 'pop') as 'pop' | 'rock' | 'rap' | 'cha3bi',
           addedDate: new Date(),
-          duration: 0,
-          thumbnailUrl: this.imagePreview || undefined
+          duration: duration,
+          thumbnailUrl: this.imagePreview || undefined,
+          isFavorite: false,
+          order: 0
         };
 
+        // Dispatch addTrack action
         this.store.dispatch(TrackActions.addTrack({ 
           track, 
           audioFile: this.selectedFile,
-          thumbnail: this.selectedImage
+          thumbnail: this.selectedImage || null
         }));
-        
-        this.dialogRef.close();
-        this.snackBar.open('Track uploaded successfully', 'Close', {
-          duration: 3000
-        });
 
-        clearInterval(interval);
+        clearInterval(progressInterval);
         this.uploadProgress = 100;
+        this.dialogRef.close(true);
+        
       } catch (error) {
-        this.uploadProgress = 0;
         console.error('Upload failed:', error);
         this.snackBar.open('Upload failed. Please try again.', 'Close', {
           duration: 3000
         });
+      } finally {
+        this.isUploading = false;
       }
-      this.isUploading = false;
-    } else {
-      this.snackBar.open('Please fill all required fields and select an audio file', 'Close', {
-        duration: 3000
-      });
     }
   }
 

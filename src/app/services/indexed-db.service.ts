@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Track } from '../models/track.model';
 import { FileValidationService } from '../services/file-validation.service';
+import { Observable, from, map } from 'rxjs';
 
 interface StorageStats {
   totalSize: number;
@@ -66,14 +67,14 @@ export class IndexedDBService {
 
   // Track Management
   async addTrack(track: Track, audioFile: File, thumbnail?: File | null): Promise<void> {
-    await this.validateFile(audioFile, thumbnail);
+    console.log('Adding track to IndexedDB:', track);
     const db = await this.db;
     
     return new Promise((resolve, reject) => {
       try {
-        const transaction = db.transaction(this.DB_CONFIG.stores, 'readwrite');
+        const transaction = db.transaction(['tracks', 'audioFiles', 'thumbnails'], 'readwrite');
         
-        // Store audio file
+        console.log('Storing audio file:', audioFile);
         transaction.objectStore('audioFiles').put({
           id: track.id,
           file: audioFile,
@@ -90,29 +91,74 @@ export class IndexedDBService {
         }
 
         // Store track metadata
-        transaction.objectStore('tracks').put({
-          ...track,
-          audioSize: audioFile.size,
-          thumbnailSize: thumbnail?.size
-        });
+        console.log('Storing track metadata');
+        transaction.objectStore('tracks').put(track);
 
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(this.handleError(transaction.error));
+        transaction.oncomplete = () => {
+          console.log('Track added successfully');
+          resolve();
+        };
+        
+        transaction.onerror = (error) => {
+          console.error('Error adding track:', error);
+          reject(error);
+        };
       } catch (error) {
-        reject(this.handleError(error));
+        console.error('Exception in addTrack:', error);
+        reject(error);
       }
     });
   }
 
   async getAllTracks(): Promise<Track[]> {
+    console.log('Getting all tracks from IndexedDB');
     const db = await this.db;
-    return this.performTransaction('tracks', 'readonly', store => store.getAll());
+    
+    return new Promise<Track[]>((resolve, reject) => {
+      try {
+        const transaction = db.transaction('tracks', 'readonly');
+        const request = transaction.objectStore('tracks').getAll();
+        
+        request.onsuccess = () => {
+          const tracks = request.result || [];
+          console.log('Retrieved tracks:', tracks);
+          resolve(tracks);
+        };
+        
+        request.onerror = (error) => {
+          console.error('Error getting tracks:', error);
+          reject(request.error);
+        };
+      } catch (error) {
+        console.error('Exception in getAllTracks:', error);
+        reject(error);
+      }
+    });
   }
 
-  async updateTrack(track: Track): Promise<Track> {
+  async updateTrack(track: Track, thumbnail?: File | null): Promise<Track> {
     const db = await this.db;
-    await this.performTransaction('tracks', 'readwrite', store => store.put(track));
-    return track;
+    
+    return new Promise<Track>((resolve, reject) => {
+      try {
+        const transaction = db.transaction(['tracks', 'thumbnails'], 'readwrite');
+        
+        if (thumbnail) {
+          transaction.objectStore('thumbnails').put({
+            id: track.id,
+            file: thumbnail,
+            size: thumbnail.size
+          });
+        }
+        
+        const request = transaction.objectStore('tracks').put(track);
+        
+        transaction.oncomplete = () => resolve(track);
+        transaction.onerror = () => reject(this.handleError(transaction.error));
+      } catch (error) {
+        reject(this.handleError(error));
+      }
+    });
   }
 
   async deleteTrack(id: string): Promise<void> {
@@ -298,5 +344,24 @@ export class IndexedDBService {
     }
     
     return track;
+  }
+
+  async getFavoriteTracks(): Promise<Track[]> {
+    const db = await this.db;
+    
+    return new Promise<Track[]>((resolve, reject) => {
+      try {
+        const transaction = db.transaction('tracks', 'readonly');
+        const request = transaction.objectStore('tracks').getAll();
+        
+        request.onsuccess = () => {
+          const tracks = request.result.filter(track => track?.isFavorite);
+          resolve(tracks);
+        };
+        request.onerror = () => reject(this.handleError(request.error));
+      } catch (error) {
+        reject(this.handleError(error));
+      }
+    });
   }
 } 

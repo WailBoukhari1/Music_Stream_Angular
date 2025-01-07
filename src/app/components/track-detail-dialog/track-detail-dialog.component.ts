@@ -28,7 +28,7 @@ import { DurationPipe } from '../../pipes/duration.pipe';
           <div class="info-item">
             <strong>Duration:</strong> {{ data.duration | duration }}
           </div>
-          <div class="info-item">
+          <div class="info-item" *ngIf="data.releaseDate">
             <strong>Release Date:</strong> {{ data.releaseDate | date }}
           </div>
           <div class="info-item">

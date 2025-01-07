@@ -31,6 +31,16 @@ export const addTrack = createAction(
   props<{ track: Track; audioFile: File; thumbnail?: File | null }>()
 );
 
+export const addTrackSuccess = createAction(
+  '[Track] Add Track Success',
+  props<{ track: Track }>()
+);
+
+export const addTrackFailure = createAction(
+  '[Track] Add Track Failure',
+  props<{ error: any }>()
+);
+
 export const deleteTrack = createAction(
   '[Track] Delete Track',
   props<{ id: string }>()
@@ -63,7 +73,7 @@ export const setError = createAction(
 
 export const updateTrack = createAction(
   '[Track] Update Track',
-  props<{ track: Track }>()
+  props<{ track: Track; thumbnail?: File | null }>()
 );
 
 export const updateTrackSuccess = createAction(
@@ -78,5 +88,15 @@ export const updateTrackFailure = createAction(
 
 export const playTrack = createAction(
   '[Track] Play Track',
+  props<{ track: Track }>()
+);
+
+export const toggleFavorite = createAction(
+  '[Track] Toggle Favorite',
+  props<{ id: string }>()
+);
+
+export const updateFavoriteSuccess = createAction(
+  '[Track] Update Favorite Success',
   props<{ track: Track }>()
 ); 

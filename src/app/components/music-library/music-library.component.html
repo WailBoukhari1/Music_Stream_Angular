@@ -52,65 +52,65 @@
     </form>
   </div>
 
-  <!-- Tracks Grid -->
-  <div class="tracks-grid" cdkDropList (cdkDropListDropped)="onDrop($event)">
-    <div *ngFor="let track of filteredTracks$ | async" 
-         class="track-card"
-         [class.track-card--edit-mode]="isEditMode"
-         cdkDrag
-         [cdkDragDisabled]="!isEditMode"
-         (click)="viewTrackDetails(track)">
-      
-      <div class="track-card__drag-handle" *ngIf="isEditMode" cdkDragHandle>
-        <mat-icon>drag_indicator</mat-icon>
-      </div>
-
-      <div class="track-card__artwork" [style.background-image]="'url(' + (track.thumbnailUrl || 'assets/default-cover.png') + ')'">
-        <div class="track-card__overlay">
-          <button mat-fab color="primary" (click)="playTrack(track, $event)">
-            <mat-icon>play_arrow</mat-icon>
-          </button>
-        </div>
-      </div>
-
-      <div class="track-card__content">
-        <div class="track-card__info">
-          <div class="track-card__header">
-            <div class="track-card__title-group">
-              <span class="track-card__category">{{ track.category | titlecase }}</span>
-              <h3 class="track-card__title">{{ track.title }}</h3>
-              <p class="track-card__artist">{{ track.artist }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="track-card__footer">
-          <div class="track-card__meta">
-            <span class="track-card__duration">
-              <mat-icon>schedule</mat-icon>
-              {{ track.duration | duration }}
-            </span>
-          </div>
-
-          <div class="track-card__actions">
-            <button mat-icon-button (click)="viewTrackDetails(track, $event)" matTooltip="View Details">
-              <mat-icon>info</mat-icon>
-            </button>
-            <button mat-icon-button color="warn" (click)="deleteTrack(track.id, track.title)" matTooltip="Delete">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Remove Tracks Grid -->
   <!-- Empty State -->
   <div *ngIf="(filteredTracks$ | async)?.length === 0" class="empty-state">
     <mat-icon>library_music</mat-icon>
     <h2>No tracks found</h2>
     <p>Try adjusting your filters or add some music to your library</p>
   </div>
+
+  <!-- Tracks Grid -->
+  <ng-container *ngIf="filteredTracks$ | async as tracks">
+    <div *ngIf="tracks.length > 0" class="tracks-grid" cdkDropList (cdkDropListDropped)="onDrop($event)">
+      <div *ngFor="let track of tracks" 
+           class="track-card" 
+           [class.draggable]="isEditMode"
+           cdkDrag
+           [cdkDragDisabled]="!isEditMode"
+           (click)="viewTrackDetails(track)">
+        
+        <!-- Thumbnail Section -->
+        <div class="thumbnail-container">
+          <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" 
+               [alt]="track.title || 'Track thumbnail'"
+               class="track-thumbnail">
+          
+          <div class="play-overlay" (click)="playTrack(track, $event)">
+            <mat-icon>play_circle</mat-icon>
+          </div>
+        </div>
+
+        <!-- Track Info -->
+        <div class="track-info">
+          <h3 class="track-title">{{ track.title || 'Untitled Track' }}</h3>
+          <p class="track-artist">{{ track.artist || 'Unknown Artist' }}</p>
+          <p class="track-duration">{{ (track.duration || 0) | duration }}</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="track-actions">
+          <button mat-icon-button 
+                  color="warn" 
+                  (click)="deleteTrack(track.id, track.title); $event.stopPropagation()"
+                  matTooltip="Delete Track">
+            <mat-icon>delete</mat-icon>
+          </button>
+          <button mat-icon-button 
+                  color="primary"
+                  (click)="toggleFavorite(track, $event)"
+                  matTooltip="Add to Favorites">
+            <mat-icon>{{ track.isFavorite ? 'favorite' : 'favorite_border' }}</mat-icon>
+          </button>
+        </div>
+
+        <!-- Drag Handle -->
+        <div *ngIf="isEditMode" class="drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon>
+        </div>
+      </div>
+    </div>
+  </ng-container>
 
   <!-- Pagination -->
   <mat-paginator 

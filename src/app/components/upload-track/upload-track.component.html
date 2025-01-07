@@ -1,101 +1,108 @@
+<div class="upload-dialog">
+  <h2>Upload New Track</h2>
+  
+  <form [formGroup]="uploadForm" (ngSubmit)="uploadTrack()">
+    <div class="form-container">
+      <div class="form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Title</mat-label>
+          <input matInput formControlName="title" placeholder="Enter track title">
+          <mat-error *ngIf="uploadForm.get('title')?.invalid">{{getErrorMessage('title')}}</mat-error>
+        </mat-form-field>
 
-    <div class="upload-dialog">
-      <h2 mat-dialog-title>Upload Music</h2>
-      
-      <mat-dialog-content>
-        <form [formGroup]="uploadForm">
-          <div class="file-input">
-            <button mat-stroked-button type="button" (click)="audioInput.click()">
-              <mat-icon>audio_file</mat-icon>
-              {{ selectedFile ? selectedFile.name : 'Choose Audio File' }}
-            </button>
-            <input
-              #audioInput
-              type="file"
-              accept="audio/mp3,audio/wav,audio/ogg"
-              (change)="onFileSelected($event)"
-              style="display: none"
-            >
+        <mat-form-field appearance="outline">
+          <mat-label>Artist</mat-label>
+          <input matInput formControlName="artist" placeholder="Enter artist name">
+          <mat-error *ngIf="uploadForm.get('artist')?.invalid">{{getErrorMessage('artist')}}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Description</mat-label>
+        <textarea matInput formControlName="description" placeholder="Enter track description"></textarea>
+        <mat-error *ngIf="uploadForm.get('description')?.invalid">{{getErrorMessage('description')}}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Category</mat-label>
+        <mat-select formControlName="category">
+          <mat-option value="pop">Pop</mat-option>
+          <mat-option value="rock">Rock</mat-option>
+          <mat-option value="rap">Rap</mat-option>
+          <mat-option value="cha3bi">Cha3bi</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="file-upload-section">
+        <!-- Audio Upload -->
+        <div class="upload-box" (click)="audioInput.click()">
+          <mat-icon>music_note</mat-icon>
+          <p class="upload-text">
+            <strong>Click to upload</strong> or drag and drop<br>
+            MP3, WAV, OGG (max. 15MB)
+          </p>
+          <input #audioInput type="file" accept=".mp3,.wav,.ogg" (change)="onFileSelected($event)" hidden>
+        </div>
+
+        <!-- Thumbnail Upload -->
+        <div class="upload-box" (click)="imageInput.click()">
+          <mat-icon>image</mat-icon>
+          <p class="upload-text">
+            <strong>Add cover image</strong> (optional)<br>
+            JPG, PNG (max. 2MB)
+          </p>
+          <input #imageInput type="file" accept="image/*" (change)="onImageSelected($event)" hidden>
+        </div>
+
+        <!-- File Preview -->
+        <div class="file-preview" *ngIf="selectedFile">
+          <mat-icon>audiotrack</mat-icon>
+          <div class="file-info">
+            <div class="file-name">{{ selectedFile.name }}</div>
+            <div class="file-size">{{ selectedFile.size | fileSize }}</div>
           </div>
+          <button mat-icon-button (click)="selectedFile = null">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
 
-          <div class="file-input">
-            <button mat-stroked-button type="button" (click)="imageInput.click()">
-              <mat-icon>image</mat-icon>
-              {{ selectedImage ? 'Change Image' : 'Add Cover Image (Optional)' }}
-            </button>
-            <input
-              #imageInput
-              type="file"
-              accept="image/jpeg,image/png"
-              (change)="onImageSelected($event)"
-              style="display: none"
-            >
+        <!-- Image Preview -->
+        <div class="file-preview" *ngIf="imagePreview">
+          <img [src]="imagePreview" class="preview-image" alt="Cover preview">
+          <div class="file-info">
+            <div class="file-name">Cover Image</div>
+            <div class="file-size">{{ selectedImage?.size | fileSize }}</div>
           </div>
+          <button mat-icon-button (click)="removeImage()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
 
-          <div class="image-preview" *ngIf="imagePreview">
-            <img [src]="imagePreview" alt="Cover preview">
-            <button mat-icon-button color="warn" class="remove-image" (click)="removeImage()">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Title</mat-label>
-            <input matInput formControlName="title">
-            <mat-error *ngIf="uploadForm.get('title')?.errors?.['required']">
-              Title is required
-            </mat-error>
-            <mat-error *ngIf="uploadForm.get('title')?.errors?.['maxlength']">
-              Title must be less than 50 characters
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Artist</mat-label>
-            <input matInput formControlName="artist">
-            <mat-error *ngIf="uploadForm.get('artist')?.errors?.['required']">
-              Artist is required
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Description</mat-label>
-            <textarea matInput formControlName="description" rows="3"></textarea>
-            <mat-error *ngIf="uploadForm.get('description')?.errors?.['maxlength']">
-              Description must be less than 200 characters
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Category</mat-label>
-            <mat-select formControlName="category">
-              <mat-option value="pop">Pop</mat-option>
-              <mat-option value="rock">Rock</mat-option>
-              <mat-option value="rap">Rap</mat-option>
-              <mat-option value="cha3bi">Cha3bi</mat-option>
-            </mat-select>
-            <mat-error *ngIf="uploadForm.get('category')?.errors?.['required']">
-              Category is required
-            </mat-error>
-          </mat-form-field>
-
-          <div *ngIf="isUploading" class="progress-section">
-            <mat-progress-bar mode="determinate" [value]="uploadProgress"></mat-progress-bar>
-            <span>{{ uploadProgress }}%</span>
-          </div>
-        </form>
-      </mat-dialog-content>
-
-      <mat-dialog-actions align="end">
-        <button mat-button (click)="dialogRef.close()">Cancel</button>
-        <button 
-          mat-raised-button 
-          color="primary" 
-          [disabled]="!uploadForm.valid || !selectedFile || isUploading"
-          (click)="uploadTrack()"
-        >
-          Upload
-        </button>
-      </mat-dialog-actions>
+      <!-- Upload Progress -->
+      <div class="upload-progress" *ngIf="isUploading">
+        <mat-progress-bar 
+          mode="determinate" 
+          [value]="uploadProgress"
+          class="upload-progress-bar">
+        </mat-progress-bar>
+        <span class="upload-percentage">{{ uploadProgress }}%</span>
+      </div>
     </div>
+
+    <div class="dialog-actions">
+      <button mat-button 
+              [disabled]="isUploading"
+              (click)="dialogRef.close()">
+        Cancel
+      </button>
+      <button mat-raised-button 
+              color="primary"
+              [disabled]="!uploadForm.valid || !selectedFile || isUploading"
+              (click)="uploadTrack()">
+        {{ isUploading ? 'Uploading...' : 'Upload Track' }}
+      </button>
+    </div>
+  </form>
+</div>
   

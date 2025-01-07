@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { PlaylistComponent } from './components/playlist/playlist.component';
 
 export const routes: Routes = [
   {
@@ -20,6 +21,10 @@ export const routes: Routes = [
     path: 'player/:id',
     loadComponent: () => import('./components/audio-player/audio-player.component')
       .then(m => m.AudioPlayerComponent)
+  },
+  {
+    path: 'playlist/favorites',
+    component: PlaylistComponent
   },
   {
     path: '**',

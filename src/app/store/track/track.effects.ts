@@ -4,18 +4,29 @@ import { of } from 'rxjs';
 import { catchError, map, mergeMap } from 'rxjs/operators';
 import { TrackService } from '../../services/track.service';
 import * as TrackActions from './track.actions';
+import { IndexedDBService } from '../../services/indexed-db.service';
+import { from } from 'rxjs';
+import { Track } from '../../models/track.model';
+import { NotificationService } from '../../services/notification.service';
 
 @Injectable()
 export class TrackEffects {
   loadTracks$ = createEffect(() =>
     this.actions$.pipe(
       ofType(TrackActions.loadTracks),
-      mergeMap(() =>
-        this.trackService.getAllTracks().pipe(
-          map(tracks => TrackActions.loadTracksSuccess({ tracks })),
-          catchError(error => of(TrackActions.loadTracksFailure({ error })))
-        )
-      )
+      mergeMap(() => {
+        console.log('Loading tracks effect triggered');
+        return from(this.indexedDBService.getAllTracks()).pipe(
+          map(tracks => {
+            console.log('Tracks loaded successfully:', tracks);
+            return TrackActions.loadTracksSuccess({ tracks });
+          }),
+          catchError(error => {
+            console.error('Error loading tracks:', error);
+            return of(TrackActions.loadTracksFailure({ error }));
+          })
+        );
+      })
     )
   );
 
@@ -43,8 +54,64 @@ export class TrackEffects {
     )
   );
 
+  addTrack$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(TrackActions.addTrack),
+      mergeMap(action =>
+        from(this.indexedDBService.addTrack(
+          action.track,
+          action.audioFile,
+          action.thumbnail
+        )).pipe(
+          map(() => {
+            this.notification.success('Track added successfully');
+            return TrackActions.loadTracks();
+          }),
+          catchError(error => {
+            this.notification.error('Failed to add track');
+            return of(TrackActions.setError({ error: error.message }));
+          })
+        )
+      )
+    )
+  );
+
+  updateTrack$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(TrackActions.updateTrack),
+      mergeMap(action =>
+        this.trackService.updateTrack(action.track).pipe(
+          map(track => TrackActions.updateTrackSuccess({ track })),
+          catchError(error => of(TrackActions.updateTrackFailure({ error: error.message })))
+        )
+      )
+    )
+  );
+
+  toggleFavorite$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(TrackActions.toggleFavorite),
+      mergeMap(({ id }) =>
+        from(this.indexedDBService.getTrackById(id)).pipe(
+          map((track: Track) => ({
+            ...track,
+            isFavorite: !track.isFavorite
+          })),
+          mergeMap((updatedTrack: Track) =>
+            from(this.indexedDBService.updateTrack(updatedTrack)).pipe(
+              map(() => TrackActions.updateFavoriteSuccess({ track: updatedTrack })),
+              catchError(error => of(TrackActions.loadTracksFailure({ error })))
+            )
+          )
+        )
+      )
+    )
+  );
+
   constructor(
     private actions$: Actions,
-    private trackService: TrackService
+    private trackService: TrackService,
+    private indexedDBService: IndexedDBService,
+    private notification: NotificationService
   ) {}
 } 

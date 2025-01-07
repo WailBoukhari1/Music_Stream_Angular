@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, filter } from 'rxjs';
 import { takeUntil, catchError } from 'rxjs/operators';
 import { Track } from '../../models/track.model';
 import * as TrackSelectors from '../../store/track/track.selectors';
@@ -26,6 +26,7 @@ import * as PlayerActions from '../../store/player/player.actions';
 })
 export class TrackDetailComponent implements OnInit, OnDestroy {
   track$: Observable<Track | null | undefined> = new Observable();
+  currentTrack?: Track;
   error: string | null = null;
   private destroy$ = new Subject<void>();
 
@@ -34,36 +35,24 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
     private router: Router,
     private store: Store<{ tracks: TrackState }>,
     private dialog: MatDialog,
-    private audioService: AudioService
+    private audioService: AudioService,
   ) {}
 
   ngOnInit() {
+    this.track$.pipe(
+      takeUntil(this.destroy$),
+      filter((track): track is Track => !!track)
+    ).subscribe(track => {
+      this.currentTrack = track;
+    });
+
     this.route.paramMap.pipe(
       takeUntil(this.destroy$)
     ).subscribe(params => {
       const trackId = params.get('id');
       if (trackId) {
-        console.log('Loading track with ID:', trackId);
         this.store.dispatch(TrackActions.loadTrack({ id: trackId }));
         this.track$ = this.store.select(TrackSelectors.selectCurrentTrack, { id: trackId });
-        this.track$.pipe(
-          takeUntil(this.destroy$)
-        ).subscribe({
-          next: track => {
-            console.log('Full Track Object:', track);
-            if (track) {
-              console.log('Track duration type:', typeof track.duration);
-              console.log('Track duration value:', track.duration);
-            }
-            if (!track) {
-              this.error = 'Track not found';
-            }
-          },
-          error: err => {
-            console.error('Error loading track:', err);
-            this.error = 'Error loading track';
-          }
-        });
       }
     });
   }
@@ -96,5 +85,9 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
         this.router.navigate(['/library']);
       }
     });
+  }
+
+  onImageError(event: any) {
+    event.target.src = 'assets/default-cover.png';
   }
 } 

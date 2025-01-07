@@ -1,1 +1,33 @@
-/* Removed all existing styles */
+.transcript-container {
+  position: fixed;
+  bottom: 100px;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  
+  .transcript-content {
+    max-width: 800px;
+    margin: 0 auto;
+    
+    h3 {
+      color: rgba(255, 255, 255, 0.9);
+      margin: 0 0 0.5rem;
+    }
+    
+    .transcript-text {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.1rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  }
+}
+
+button.active {
+  color: #1db954;
+}

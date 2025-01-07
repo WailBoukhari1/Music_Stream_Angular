@@ -1,0 +1,222 @@
+// Shared Variables
+$background-dark: #121212;
+$background-light: rgba(255, 255, 255, 0.05);
+$border-light: rgba(255, 255, 255, 0.1);
+$accent-color: #dc143c;
+$accent-gradient: linear-gradient(135deg, #dc143c 0%, #ff1464 100%);
+$text-primary: rgba(255, 255, 255, 0.9);
+$text-secondary: rgba(255, 255, 255, 0.6);
+
+// Shared Mixins
+@mixin glass-background {
+  background: rgba(24, 24, 24, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid $border-light;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+@mixin card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+}
+
+@mixin gradient-text {
+  background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(220, 20, 60, 0.5);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(220, 20, 60, 0.7);
+    }
+  }
+}
+
+// Shared Component Styles
+.dialog-container {
+  @include glass-background;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  @include custom-scrollbar;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem;
+    @include gradient-text;
+  }
+}
+
+.form-field {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.action-button {
+  min-width: 120px;
+  height: 40px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  
+  &.primary {
+    background: $accent-gradient;
+    box-shadow: 0 4px 15px rgba($accent-color, 0.3);
+    
+    &:hover {
+      box-shadow: 0 6px 20px rgba($accent-color, 0.4);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// Material Overrides
+.mat-mdc-form-field {
+  font-size: 0.9rem !important;
+  
+  .mat-mdc-form-field-flex {
+    @extend .form-field;
+  }
+
+  .mdc-floating-label {
+    font-size: 0.9rem !important;
+    color: $text-secondary !important;
+  }
+
+  input, textarea, mat-select {
+    font-size: 0.9rem !important;
+    color: $text-primary !important;
+  }
+}
+
+.mat-mdc-dialog-container {
+  @extend .dialog-container;
+}
+
+// Responsive Mixins
+@mixin mobile {
+  @media (max-width: 600px) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: 768px) {
+    @content;
+  }
+}
+
+// Add these new shared component styles
+.upload-container {
+  background: $background-light;
+  border: 2px dashed $border-light;
+  border-radius: 10px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  @include card-hover;
+
+  mat-icon {
+    font-size: 2rem;
+    width: 2rem;
+    height: 2rem;
+    color: $text-secondary;
+    margin-bottom: 0.75rem;
+  }
+
+  .upload-text {
+    color: $text-secondary;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+
+    strong {
+      display: block;
+      color: $accent-color;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+  }
+}
+
+.preview-container {
+  background: $background-light;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  .preview-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+
+  .file-info {
+    flex: 1;
+    
+    .file-name {
+      color: $text-primary;
+      font-weight: 500;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+      word-break: break-word;
+    }
+
+    .file-size {
+      color: $text-secondary;
+      font-size: 0.8rem;
+    }
+  }
+
+  button {
+    color: $accent-color;
+  }
+}
+
+.action-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  position: sticky;
+  bottom: 0;
+  padding: 0.75rem 0;
+  background-color: rgba($background-dark, 0.95);
+  z-index: 10;
+
+  @include mobile {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  button {
+    @extend .action-button;
+  }
+} 

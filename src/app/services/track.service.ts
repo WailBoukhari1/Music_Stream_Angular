@@ -18,11 +18,39 @@ export class TrackService {
   }
 
   addTrack(track: Track, audioFile: File, thumbnail?: File | null): Observable<void> {
-    return from(this.indexedDB.addTrack(track, audioFile, thumbnail));
+    return new Observable(observer => {
+      const audio = new Audio();
+      const objectUrl = URL.createObjectURL(audioFile);
+      
+      audio.addEventListener('loadedmetadata', () => {
+        const updatedTrack = {
+          ...track,
+          duration: Math.round(audio.duration)
+        };
+        
+        URL.revokeObjectURL(objectUrl);
+        
+        this.indexedDB.addTrack(updatedTrack, audioFile, thumbnail)
+          .then(() => {
+            observer.next();
+            observer.complete();
+          })
+          .catch(error => {
+            observer.error(error);
+          });
+      });
+
+      audio.addEventListener('error', (error) => {
+        URL.revokeObjectURL(objectUrl);
+        observer.error(new Error('Error loading audio file'));
+      });
+
+      audio.src = objectUrl;
+    });
   }
 
-  updateTrack(track: Track): Observable<Track> {
-    return from(this.indexedDB.updateTrack(track));
+  updateTrack(track: Track, thumbnail?: File | null): Observable<Track> {
+    return from(this.indexedDB.updateTrack(track, thumbnail));
   }
 
   deleteTrack(id: string): Observable<void> {

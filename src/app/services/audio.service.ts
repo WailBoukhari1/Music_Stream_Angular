@@ -23,6 +23,10 @@ export class AudioService {
   private queueSubject = new BehaviorSubject<Track[]>([]);
   queue$ = this.queueSubject.asObservable();
 
+  get audioElement(): HTMLAudioElement {
+    return this.audio;
+  }
+
   constructor(
     private store: Store,
     private indexedDB: IndexedDBService

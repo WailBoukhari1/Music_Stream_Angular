@@ -1,18 +1,22 @@
 import { createReducer, on } from '@ngrx/store';
+import { createEntityAdapter, EntityAdapter, EntityState } from '@ngrx/entity';
 import * as TrackActions from './track.actions';
 import { Track } from '../../models/track.model';
 
-export interface TrackState {
-  entities: { [id: string]: Track };
+// Create entity adapter
+export const adapter: EntityAdapter<Track> = createEntityAdapter<Track>();
+
+// Define the state interface extending EntityState
+export interface TrackState extends EntityState<Track> {
   loading: boolean;
   error: string | null;
 }
 
-export const initialState: TrackState = {
-  entities: {},
+// Initialize state using adapter
+export const initialState: TrackState = adapter.getInitialState({
   loading: false,
   error: null
-};
+});
 
 export const trackReducer = createReducer(
   initialState,
@@ -21,14 +25,14 @@ export const trackReducer = createReducer(
     loading: true,
     error: null
   })),
-  on(TrackActions.loadTracksSuccess, (state, { tracks }) => ({
-    ...state,
-    entities: tracks.reduce<{ [id: string]: Track }>((acc, track) => {
-      acc[track.id] = track;
-      return acc;
-    }, {}),
-    loading: false
-  })),
+  on(TrackActions.loadTracksSuccess, (state, { tracks }) => {
+    console.log('Reducer handling loadTracksSuccess:', tracks);
+    return adapter.setAll(tracks, {
+      ...state,
+      loading: false,
+      error: null
+    });
+  }),
   on(TrackActions.loadTrack, state => ({
     ...state,
     loading: true,
@@ -61,5 +65,20 @@ export const trackReducer = createReducer(
     ...state,
     loading: false,
     error
-  }))
+  })),
+  on(TrackActions.toggleFavorite, (state, { id }) => {
+    const track = state.entities[id];
+    if (!track) return state;
+
+    return adapter.updateOne({
+      id,
+      changes: { isFavorite: !track.isFavorite }
+    }, state);
+  }),
+  on(TrackActions.updateFavoriteSuccess, (state, { track }) => {
+    return adapter.updateOne({
+      id: track.id,
+      changes: track
+    }, state);
+  })
 ); 

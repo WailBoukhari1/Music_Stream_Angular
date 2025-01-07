@@ -22,7 +22,7 @@ import { DurationPipe } from '../../pipes/duration.pipe';
     MatSliderModule,
     MatButtonModule,
     MatProgressBarModule,
-    DurationPipe
+    DurationPipe,
   ],
   templateUrl: './audio-player.component.html',
   styleUrls: ['./audio-player.component.scss']
@@ -42,10 +42,11 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private isDragging = false;
   playbackState$ = this.store.select(PlayerSelectors.selectPlaybackState);
+  showTranscript = false;
 
   constructor(
     private store: Store,
-    public audioService: AudioService
+    public audioService: AudioService,
   ) {
     this.currentTrack$ = this.store.select(PlayerSelectors.selectCurrentTrack)
       .pipe(takeUntil(this.destroy$));

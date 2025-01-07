@@ -27,6 +27,7 @@ import { selectAllTracks } from '../../store/track/track.selectors';
 import { Router } from '@angular/router';
 import * as PlayerActions from '../../store/player/player.actions';
 import { TrackState } from '../../store/track/track.reducer';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-music-library',
@@ -85,6 +86,7 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
     this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))
   ]).pipe(
     map(([tracks, filters]) => {
+      if (!tracks) return [];
       const filteredTracks = this.filterTracks(tracks, filters);
       const startIndex = this.currentPage * this.pageSize;
       return filteredTracks.slice(startIndex, startIndex + this.pageSize);
@@ -96,7 +98,10 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
     this.store.select(selectAllTracks),
     this.filterForm.valueChanges.pipe(startWith(this.filterForm.value))
   ]).pipe(
-    map(([tracks, filters]) => this.filterTracks(tracks, filters).length)
+    map(([tracks, filters]) => {
+      if (!tracks) return 0;
+      return this.filterTracks(tracks, filters).length;
+    })
   );
 
   constructor(
@@ -105,10 +110,20 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
     private router: Router,
     private indexedDBService: IndexedDBService,
     private dialog: MatDialog,
+    private notification: NotificationService
   ) {}
 
   ngOnInit() {
     this.loadTracks();
+    
+    // Add this debug subscription
+    this.store.select(selectAllTracks).subscribe(tracks => {
+      console.log('Music library received tracks:', tracks);
+    });
+
+    this.filteredTracks$.subscribe(tracks => {
+      console.log('Filtered tracks:', tracks);
+    });
   }
 
   ngOnDestroy() {
@@ -124,25 +139,26 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
     this.router.navigate(['/track', track.id]);
   }
 
-  deleteTrack(id: string, trackName: string): void {
+  deleteTrack(id: string, trackName: string | undefined): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {
         title: 'Delete Track',
-        message: `Are you sure you want to delete "${trackName}"?`
+        message: `Are you sure you want to delete "${trackName || 'this track'}"?`
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.store.dispatch(TrackActions.deleteTrack({ id }));
+        this.notification.success('Track deleted successfully');
       }
     });
   }
 
   // Drag & Drop
-  onDrop(event: CdkDragDrop<Track[]>) {
-    if (!this.isEditMode) return;
+  onDrop(event: CdkDragDrop<Track[]>): void {
+    if (!this.isEditMode || !this.tracks) return;
 
     const tracks = [...this.tracks];
     moveItemInArray(tracks, event.previousIndex, event.currentIndex);
@@ -156,12 +172,13 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
     
     this.indexedDBService.updateTrackOrders(updatedTracks)
       .then(() => {
-        // Dispatch success action to update store
         this.store.dispatch(TrackActions.loadTracksSuccess({ tracks: updatedTracks }));
+        this.notification.success('Track order updated successfully');
       })
       .catch(error => {
         console.error('Error updating track order:', error);
-        this.loadTracks(); // Reload on error
+        this.notification.error('Failed to update track order');
+        this.loadTracks();
       });
   }
 
@@ -187,11 +204,13 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
 
   private filterTracks(tracks: Track[], filters: any): Track[] {
     if (!tracks) return [];
+    if (!filters) return tracks;
     
     return tracks.filter(track => {
+      if (!track) return false;
       const searchMatch = !filters.search || 
-        track.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        track.artist.toLowerCase().includes(filters.search.toLowerCase());
+        track.title.toLowerCase().includes((filters.search || '').toLowerCase()) ||
+        track.artist.toLowerCase().includes((filters.search || '').toLowerCase());
 
       const categoryMatch = !filters.category || 
         track.category === filters.category;
@@ -201,16 +220,16 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
 
       return searchMatch && categoryMatch && durationMatch;
     }).sort((a, b) => {
-      const direction = filters.sortDirection === 'desc' ? -1 : 1;
+      const direction = (filters.sortDirection === 'desc' ? -1 : 1);
       switch (filters.sortBy) {
         case 'title':
-          return direction * a.title.localeCompare(b.title);
+          return direction * (a.title || '').localeCompare(b.title || '');
         case 'artist':
-          return direction * a.artist.localeCompare(b.artist);
+          return direction * (a.artist || '').localeCompare(b.artist || '');
         case 'duration':
-          return direction * (a.duration - b.duration);
+          return direction * ((a.duration || 0) - (b.duration || 0));
         default:
-          return direction * (new Date(a.addedDate).getTime() - new Date(b.addedDate).getTime());
+          return direction * (new Date(a.addedDate || 0).getTime() - new Date(b.addedDate || 0).getTime());
       }
     });
   }
@@ -232,8 +251,10 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
   }
 
   // Add a new method for playing track
-  playTrack(track: Track, event: Event) {
-    event.stopPropagation(); // Prevent the card click event from firing
+  playTrack(track: Track, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.router.navigate(['/track', track.id]).then(() => {
       this.audioService.playTrack(track);
     });
@@ -256,5 +277,19 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
           return direction * (new Date(a.addedDate).getTime() - new Date(b.addedDate).getTime());
       }
     });
+  }
+
+  toggleFavorite(track: Track, event: Event) {
+    event.stopPropagation();
+    this.store.dispatch(TrackActions.toggleFavorite({ id: track.id }));
+  }
+
+  // Add a method to get favorite tracks
+  getFavoriteTracks(): Observable<Track[]> {
+    return this.store.select(selectAllTracks).pipe(
+      map(tracks => tracks.filter((track): track is Track => 
+        track !== undefined && track.isFavorite === true
+      ))
+    );
   }
 } 

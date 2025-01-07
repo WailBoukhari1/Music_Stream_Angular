@@ -1,55 +1,20 @@
-@use '@angular/material' as mat;
+@import 'styles/theme';
+@import 'styles/shared';
 
-// Custom Crimson palette
-$crimson-palette: (
-  50: #ffe1e7,
-  100: #ffb3c1,
-  200: #fd8198,
-  300: #fc4f6f,
-  400: #fb2951,
-  500: #dc143c, // Main crimson color
-  600: #cc1236,
-  700: #b80f2f,
-  800: #a80c28,
-  900: #8b071c,
-  contrast: (
-    50: rgba(black, 0.87),
-    100: rgba(black, 0.87),
-    200: rgba(black, 0.87),
-    300: white,
-    400: white,
-    500: white,
-    600: white,
-    700: white,
-    800: white,
-    900: white,
-  )
-);
-
-@include mat.core();
-
-$primary: mat.define-palette($crimson-palette, 500);
-$accent: mat.define-palette(mat.$grey-palette, A200, A100, A400);
-$warn: mat.define-palette(mat.$red-palette);
-
-$theme: mat.define-dark-theme((
-  color: (
-    primary: $primary,
-    accent: $accent,
-    warn: $warn,
-  ),
-  typography: mat.define-typography-config(),
-));
-
-@include mat.all-component-themes($theme);
-
-// Global styles
+// Global Styles
 html, body { 
   height: 100%; 
   margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+body { 
   background-color: #121212;
-  color: white;
+  color: $text-primary;
   background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+  font-size: 14px;
+  line-height: 1.5;
+
   &::before {
     content: '';
     position: fixed;
@@ -58,19 +23,16 @@ html, body {
     width: 100%;
     height: 100%;
     background: 
-      radial-gradient(circle at 15% 50%, rgba(220, 20, 60, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 85% 30%, rgba(220, 20, 60, 0.05) 0%, transparent 50%);
+      radial-gradient(circle at 15% 50%, rgba($accent-color, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 85% 30%, rgba($accent-color, 0.05) 0%, transparent 50%);
     pointer-events: none;
+    z-index: -1;
   }
-}
-
-body { 
-  font-family: Roboto, "Helvetica Neue", sans-serif; 
 }
 
 // Utility classes
 .error-message {
-  color: mat.get-color-from-palette($warn);
+  color: $accent-color;
 }
 
 .loading-overlay {
@@ -82,4 +44,106 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+}
+
+// Global Material Overrides
+.mat-mdc-snack-bar-container {
+  &.error-snackbar {
+    --mdc-snackbar-container-color: #{rgba($accent-color, 0.9)};
+    --mat-mdc-snack-bar-button-color: #{$text-primary};
+  }
+}
+
+.mat-mdc-menu-panel {
+  @include glass-background;
+  border-radius: 12px !important;
+  
+  .mat-mdc-menu-item {
+    font-size: 0.9rem;
+    color: $text-primary;
+    
+    &:hover {
+      background: rgba($accent-color, 0.1);
+    }
+
+    &.active {
+      background: rgba($accent-color, 0.2);
+      color: $accent-color;
+    }
+  }
+}
+
+// Material Button Overrides
+.mat-mdc-raised-button.mat-primary {
+  background: $accent-gradient !important;
+}
+
+.mat-mdc-fab.mat-primary {
+  background: $accent-gradient !important;
+}
+
+// Material Form Field Dark Theme Adjustments
+.mat-mdc-form-field {
+  .mdc-text-field--filled {
+    background: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .mdc-text-field--focused {
+    .mdc-floating-label {
+      color: $accent-color !important;
+    }
+  }
+
+  .mat-mdc-form-field-ripple {
+    background-color: $accent-color !important;
+  }
+}
+
+// Scrollbar Styling
+* {
+  @include custom-scrollbar;
+}
+
+// Snackbar styles
+.success-snackbar {
+  background: #43a047 !important;
+  color: white !important;
+  
+  .mat-simple-snackbar-action {
+    color: white !important;
+  }
+}
+
+.error-snackbar {
+  background: #d32f2f !important;
+  color: white !important;
+  
+  .mat-simple-snackbar-action {
+    color: white !important;
+  }
+}
+
+.info-snackbar {
+  background: #1976d2 !important;
+  color: white !important;
+  
+  .mat-simple-snackbar-action {
+    color: white !important;
+  }
+}
+
+// Animation for snackbars
+.mat-snack-bar-container {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
