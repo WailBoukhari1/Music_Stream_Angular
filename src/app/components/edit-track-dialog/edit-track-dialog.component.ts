@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -12,6 +12,7 @@ import * as TrackActions from '../../store/track/track.actions';
 import { FileValidationService } from '../../services/file-validation.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FileSizePipe } from '../../pipes/file-size.pipe';
+import { Subject, takeUntil, take } from 'rxjs';
 
 @Component({
   selector: 'app-edit-track-dialog',
@@ -276,10 +277,11 @@ import { FileSizePipe } from '../../pipes/file-size.pipe';
     }
   `]
 })
-export class EditTrackDialogComponent {
+export class EditTrackDialogComponent implements OnInit, OnDestroy {
   editForm: FormGroup;
   selectedImage: File | null = null;
   imagePreview: string | null = null;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -295,6 +297,19 @@ export class EditTrackDialogComponent {
       description: [data.description, [Validators.maxLength(200)]],
       category: [data.category, [Validators.required]]
     });
+  }
+
+  ngOnInit() {
+    this.editForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        console.log('Form value changed:', value);
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onImageSelected(event: Event): void {
@@ -341,7 +356,12 @@ export class EditTrackDialogComponent {
         track: updatedTrack,
         thumbnail: this.selectedImage
       }));
-      this.dialogRef.close(true);
+      
+      this.store.select(state => state)
+        .pipe(take(1))
+        .subscribe(() => {
+          this.dialogRef.close(true);
+        });
     }
   }
 } 

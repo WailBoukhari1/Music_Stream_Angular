@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: music-app
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - angular-cache:/app/.angular/cache
+    environment:
+      - NODE_ENV=development
+    user: appuser
+    networks:
+      - app-network
+
+volumes:
+  angular-cache:
+
+networks:
+  app-network:
+    driver: bridge 

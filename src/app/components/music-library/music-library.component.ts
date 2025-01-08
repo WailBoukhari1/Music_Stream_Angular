@@ -16,7 +16,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
 import { UploadTrackComponent } from '../upload-track/upload-track.component';
 
 import { Track } from '../../models/track.model';
@@ -302,7 +302,5 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
       maxHeight: '90vh',
       panelClass: 'upload-dialog-container'
     });
-    
-    // ... rest of the code
   }
 } 

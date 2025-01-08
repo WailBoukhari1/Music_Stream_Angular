@@ -61,25 +61,43 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.currentTrack$.subscribe(track => {
-      console.log('Current track:', track);
-    });
+    this.currentTrack$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(track => {
+        console.log('Current track:', track);
+      });
 
     this.audioService.duration$
       .pipe(takeUntil(this.destroy$))
       .subscribe(duration => {
         this.duration = duration;
       });
+
+    this.playbackState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(state => {
+        console.log('Playback state:', state);
+      });
+
+      this.error$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(error => {
+        if (error) {
+          console.error('Error:', error);
+        }
+      });
   }
 
   togglePlay() {
-    this.isPlaying$.pipe(take(1)).subscribe(isPlaying => {
-      if (isPlaying) {
-        this.audioService.pause();
-      } else {
-        this.audioService.play();
-      }
-    });
+    this.isPlaying$
+      .pipe(take(1))
+      .subscribe(isPlaying => {
+        if (isPlaying) {
+          this.audioService.pause();
+        } else {
+          this.audioService.play();
+        }
+      });
   }
 
   seekTo(event: MouseEvent) {

@@ -153,13 +153,13 @@ export class AudioService {
         await this.audio.play();
         this.store.dispatch(PlayerActions.play());
       } else {
-        // If no track is loaded, try to get current track from store
-        this.store.select(PlayerSelectors.selectCurrentTrack)
+        const subscription = this.store.select(PlayerSelectors.selectCurrentTrack)
           .pipe(take(1))
           .subscribe(async track => {
             if (track) {
               await this.playTrack(track);
             }
+            subscription.unsubscribe();
           });
       }
     } catch (error: any) {
@@ -192,7 +192,7 @@ export class AudioService {
         await this.playTrack(nextTrack);
       }
     } else {
-      this.store.select(PlayerSelectors.selectCurrentTrack)
+      const subscription = this.store.select(PlayerSelectors.selectCurrentTrack)
         .pipe(take(1), filter(track => track !== null))
         .subscribe(async currentTrack => {
           const tracks = await this.indexedDB.getAllTracks();
@@ -201,12 +201,13 @@ export class AudioService {
           if (nextTrack) {
             await this.playTrack(nextTrack);
           }
+          subscription.unsubscribe();
         });
     }
   }
 
   async playPrevious() {
-    this.store.select(PlayerSelectors.selectCurrentTrack)
+    const subscription = this.store.select(PlayerSelectors.selectCurrentTrack)
       .pipe(take(1), filter(track => track !== null))
       .subscribe(async currentTrack => {
         const tracks = await this.indexedDB.getAllTracks();
@@ -216,18 +217,16 @@ export class AudioService {
         if (prevTrack) {
           await this.playTrack(prevTrack);
         }
+        subscription.unsubscribe();
       });
   }
 
   cleanup() {
-    if (this.audio.src) {
-      URL.revokeObjectURL(this.audio.src);
-    }
-    this.audio.pause();
-    this.audio.src = '';
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
+    if (this.audio) {
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      this.audio.src = '';
+      this.audio.load();
     }
   }
 

@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject, filter } from 'rxjs';
-import { takeUntil, catchError } from 'rxjs/operators';
+import { takeUntil, catchError, take } from 'rxjs/operators';
 import { Track } from '../../models/track.model';
 import * as TrackSelectors from '../../store/track/track.selectors';
 import * as TrackActions from '../../store/track/track.actions';
@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 import { DurationPipe } from '../../pipes/duration.pipe';
 import { MatDialog } from '@angular/material/dialog';
 import { EditTrackDialogComponent } from '../edit-track-dialog/edit-track-dialog.component';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent } from '../shared/confirm-dialog/confirm-dialog.component';
 import { MatCardModule } from '@angular/material/card';
 import { AudioService } from '../../services/audio.service';
 import * as PlayerActions from '../../store/player/player.actions';
@@ -39,22 +39,23 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.track$.pipe(
-      takeUntil(this.destroy$),
-      filter((track): track is Track => !!track)
-    ).subscribe(track => {
-      this.currentTrack = track;
-    });
+    this.route.paramMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const trackId = params.get('id');
+        if (trackId) {
+          this.store.dispatch(TrackActions.loadTrack({ id: trackId }));
+        }
+      });
 
-    this.route.paramMap.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(params => {
-      const trackId = params.get('id');
-      if (trackId) {
-        this.store.dispatch(TrackActions.loadTrack({ id: trackId }));
-        this.track$ = this.store.select(TrackSelectors.selectCurrentTrack, { id: trackId });
-      }
-    });
+    this.track$
+      .pipe(
+        takeUntil(this.destroy$),
+        filter((track): track is Track => !!track)
+      )
+      .subscribe(track => {
+        this.currentTrack = track;
+      });
   }
 
   ngOnDestroy() {
@@ -79,12 +80,14 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
       data: { title: 'Delete Track', message: `Are you sure you want to delete "${track.title}"?` }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.store.dispatch(TrackActions.deleteTrack({ id: track.id }));
-        this.router.navigate(['/library']);
-      }
-    });
+    dialogRef.afterClosed()
+      .pipe(take(1))
+      .subscribe(result => {
+        if (result) {
+          this.store.dispatch(TrackActions.deleteTrack({ id: track.id }));
+          this.router.navigate(['/library']);
+        }
+      });
   }
 
   onImageError(event: any) {

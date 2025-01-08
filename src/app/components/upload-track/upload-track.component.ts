@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -13,6 +13,8 @@ import * as TrackActions from '../../store/track/track.actions';
 import { AudioService } from '../../services/audio.service';
 import { FileSizePipe } from '../../pipes/file-size.pipe';
 import { NotificationService } from '../../services/notification.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-upload-track',
@@ -31,7 +33,8 @@ import { NotificationService } from '../../services/notification.service';
     FileSizePipe
   ]
 })
-export class UploadTrackComponent {
+export class UploadTrackComponent implements OnInit, OnDestroy {
+ private destroy$ = new Subject<void>();
   uploadForm: FormGroup;
   selectedFile: File | null = null;
   selectedImage: File | null = null;
@@ -54,6 +57,20 @@ export class UploadTrackComponent {
       category: ['pop', Validators.required],
       description: ['', Validators.maxLength(200)]
     });
+  }
+
+  ngOnInit() {
+    // Monitor form changes
+   this.uploadForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        console.log('Form value changed:', this.uploadForm.value);
+      });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onDragOver(event: DragEvent) {

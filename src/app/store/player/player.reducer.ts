@@ -10,8 +10,6 @@ export interface PlayerState {
   error: string | null;
   loadingState: LoadingState;
   playbackState: PlaybackState;
-  shuffle: boolean;
-  repeat: boolean;
 }
 
 export const initialState: PlayerState = {
@@ -22,8 +20,6 @@ export const initialState: PlayerState = {
   error: null,
   loadingState: 'success',
   playbackState: 'stopped',
-  shuffle: false,
-  repeat: false
 };
 
 export const playerReducer = createReducer(

@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { Track } from '../models/track.model';
 import { FileValidationService } from '../services/file-validation.service';
-import { Observable, from, map } from 'rxjs';
+import { Observable, from, map, Subject } from 'rxjs';
 
 interface StorageStats {
   totalSize: number;
@@ -19,7 +19,7 @@ interface AudioFileRecord {
 @Injectable({
   providedIn: 'root'
 })
-export class IndexedDBService {
+export class IndexedDBService implements OnDestroy {
   private readonly DB_CONFIG = {
     name: 'musicPlayerDB',
     version: 3,
@@ -41,6 +41,7 @@ export class IndexedDBService {
   };
 
   private db: Promise<IDBDatabase>;
+  private destroy$ = new Subject<void>();
 
   constructor(private fileValidationService: FileValidationService) {
     this.db = this.initDB();
@@ -362,6 +363,18 @@ export class IndexedDBService {
       } catch (error) {
         reject(this.handleError(error));
       }
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+    
+    // Close IndexedDB connection
+    this.db.then(database => {
+      database.close();
+    }).catch(error => {
+      console.error('Error closing IndexedDB:', error);
     });
   }
 } 

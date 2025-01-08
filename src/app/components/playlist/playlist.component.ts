@@ -29,57 +29,7 @@ interface AppState {
     MatRippleModule,
     DurationPipe
   ],
-  template: `
-    <div class="playlist-container">
-      <div class="playlist-header">
-        <div class="header-content">
-          <div class="playlist-info">
-            <h1>Favorite Tracks</h1>
-            <p>{{ (favoriteTracks$ | async)?.length || 0 }} tracks</p>
-          </div>
-          <button mat-raised-button color="primary" *ngIf="(favoriteTracks$ | async)?.length">
-            <mat-icon>play_arrow</mat-icon>
-            Play All
-          </button>
-        </div>
-      </div>
-
-      <div class="tracks-list" *ngIf="(favoriteTracks$ | async)?.length; else empty">
-        <div class="track-item" *ngFor="let track of favoriteTracks$ | async; let i = index"
-             matRipple
-             (click)="playTrack(track)">
-          <div class="track-number">{{ i + 1 }}</div>
-          <div class="track-thumbnail">
-            <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
-            <div class="play-overlay">
-              <mat-icon>play_arrow</mat-icon>
-            </div>
-          </div>
-          <div class="track-info">
-            <h3>{{ track.title }}</h3>
-            <p>{{ track.artist }}</p>
-          </div>
-          <div class="track-category">{{ track.category }}</div>
-          <div class="track-duration">
-            {{ track.duration | duration }}
-          </div>
-          <div class="track-actions">
-            <button mat-icon-button (click)="removeFromFavorites(track, $event)" matTooltip="Remove from favorites">
-              <mat-icon>favorite</mat-icon>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <ng-template #empty>
-        <div class="empty-state">
-          <mat-icon>favorite_border</mat-icon>
-          <h2>No favorite tracks yet</h2>
-          <p>Add some tracks to your favorites from the library</p>
-        </div>
-      </ng-template>
-    </div>
-  `,
+  templateUrl: './playlist.component.html',
   styleUrls: ['./playlist.component.scss']
 })
 export class PlaylistComponent implements OnInit {
