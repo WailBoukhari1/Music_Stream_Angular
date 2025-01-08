@@ -61,6 +61,10 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.currentTrack$.subscribe(track => {
+      console.log('Current track:', track);
+    });
+
     this.audioService.duration$
       .pipe(takeUntil(this.destroy$))
       .subscribe(duration => {
@@ -113,5 +117,9 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
 
   getFormattedTime(time: number | null): number {
     return time ?? 0;
+  }
+
+  getProgressPercentage(currentTime: number | null): number {
+    return ((currentTime || 0) / (this.duration || 1)) * 100;
   }
 } 

@@ -11,20 +11,16 @@
           <mat-icon>library_music</mat-icon>
           <span>Library</span>
         </a>
-        <a mat-button routerLink="/playlists" routerLinkActive="active">
-          <mat-icon>playlist_play</mat-icon>
-          <span>Playlists</span>
+        <a mat-button routerLink="/playlist/favorites" routerLinkActive="active">
+          <mat-icon>favorite</mat-icon>
+          Favorites
         </a>
       </nav>
+
 
       <button mat-flat-button color="primary" (click)="openUploadDialog()" class="upload-btn">
         <mat-icon>add</mat-icon>
         <span>Add Track</span>
-      </button>
-
-      <button mat-button routerLink="/playlist/favorites">
-        <mat-icon>favorite</mat-icon>
-        Favorites
       </button>
     </div>
   </div>

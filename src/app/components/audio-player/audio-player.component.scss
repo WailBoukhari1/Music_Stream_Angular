@@ -1,33 +1,213 @@
-.transcript-container {
+.audio-player {
   position: fixed;
-  bottom: 100px;
+  bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 1rem;
-  backdrop-filter: blur(10px);
+  background: rgba(16, 16, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
   z-index: 1000;
-  
-  .transcript-content {
-    max-width: 800px;
+  padding: 0.75rem;
+
+  .player-container {
+    max-width: 1400px;
     margin: 0 auto;
-    
-    h3 {
-      color: rgba(255, 255, 255, 0.9);
-      margin: 0 0 0.5rem;
+    display: grid;
+    grid-template-columns: minmax(200px, 300px) 1fr minmax(180px, 250px);
+    gap: 1.5rem;
+    align-items: center;
+
+    .now-playing {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.5rem;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.03);
+
+      .thumbnail-wrapper {
+        position: relative;
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .play-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.4);
+          opacity: 0;
+          transition: opacity 0.2s ease;
+
+          mat-icon {
+            color: white;
+            font-size: 28px;
+            width: 28px;
+            height: 28px;
+          }
+        }
+
+        &:hover .play-overlay {
+          opacity: 1;
+        }
+      }
+
+      .track-info {
+        min-width: 0;
+        
+        h3 {
+          margin: 0 0 0.25rem;
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: white;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        p {
+          margin: 0;
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.6);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
     }
-    
-    .transcript-text {
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 1.1rem;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      max-height: 200px;
-      overflow-y: auto;
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0 1rem;
+
+      .buttons {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+
+        button {
+          color: rgba(255, 255, 255, 0.8);
+          transition: all 0.2s ease;
+
+          &:hover {
+            color: white;
+            transform: scale(1.05);
+          }
+
+          &[mat-fab] {
+            background: #dc143c;
+            transform: scale(0.8);
+
+            &:hover {
+              background: lighten(#dc143c, 5%);
+              transform: scale(0.85);
+            }
+
+            mat-icon {
+              color: white;
+              font-size: 24px;
+              width: 24px;
+              height: 24px;
+            }
+          }
+        }
+      }
+
+      .progress-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.75rem;
+
+        mat-progress-bar {
+          cursor: pointer;
+          height: 4px;
+
+          ::ng-deep {
+            .mdc-linear-progress__bar-inner {
+              border-color: #dc143c;
+            }
+
+            .mdc-linear-progress__buffer-bar {
+              background: rgba(255, 255, 255, 0.1);
+            }
+          }
+
+          &:hover ::ng-deep .mdc-linear-progress__bar-inner {
+            border-color: lighten(#dc143c, 10%);
+          }
+        }
+      }
+    }
+
+    .volume-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.03);
+
+      button {
+        color: rgba(255, 255, 255, 0.8);
+        
+        &:hover {
+          color: white;
+        }
+      }
+
+      mat-slider {
+        min-width: 80px;
+        margin: 0;
+
+        ::ng-deep {
+          .mdc-slider__track--active {
+            background: #dc143c;
+          }
+
+          .mdc-slider__thumb {
+            border-color: #dc143c;
+          }
+        }
+      }
     }
   }
 }
 
-button.active {
-  color: #1db954;
+@media (max-width: 768px) {
+  .audio-player {
+    .player-container {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+
+      .now-playing {
+        justify-content: center;
+      }
+
+      .controls {
+        padding: 0;
+      }
+
+      .volume-controls {
+        justify-self: center;
+      }
+    }
+  }
 }

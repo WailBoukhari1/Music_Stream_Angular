@@ -1,20 +1,25 @@
 <div class="audio-player">
   <div class="player-container">
     <div class="now-playing">
-      <img [src]="(currentTrack$ | async)?.thumbnailUrl || 'assets/default-cover.png'" 
-           [alt]="(currentTrack$ | async)?.title">
-      <div>
-        <h3>{{ (currentTrack$ | async)?.title }}</h3>
-        <p>{{ (currentTrack$ | async)?.artist }}</p>
+      <div class="thumbnail-wrapper">
+        <img [src]="(currentTrack$ | async)?.thumbnailUrl || 'assets/default-cover.png'" 
+             [alt]="(currentTrack$ | async)?.title || 'Track'">
+        <div class="play-overlay">
+          <mat-icon>play_arrow</mat-icon>
+        </div>
+      </div>
+      <div class="track-info">
+        <h3>{{ (currentTrack$ | async)?.title || 'No Track Selected' }}</h3>
+        <p>{{ (currentTrack$ | async)?.artist || 'Unknown Artist' }}</p>
       </div>
     </div>
 
-    <div>
-      <div>
+    <div class="controls">
+      <div class="buttons">
         <button mat-icon-button>
           <mat-icon>skip_previous</mat-icon>
         </button>
-        <button mat-fab color="primary" (click)="togglePlay()">
+        <button mat-fab (click)="togglePlay()">
           <mat-icon>{{ (isPlaying$ | async) ? 'pause' : 'play_arrow' }}</mat-icon>
         </button>
         <button mat-icon-button>
@@ -22,18 +27,18 @@
         </button>
       </div>
       
-      <div>
-        <span>{{ getFormattedTime(currentTime$ | async) | duration }}</span>
+      <div class="progress-container">
+        <span>{{ currentTime$ | async | duration }}</span>
         <mat-progress-bar 
           mode="determinate"
-          [value]="getFormattedTime(currentTime$ | async)"
+          [value]="getProgressPercentage(currentTime$ | async)"
           (click)="seekTo($event)">
         </mat-progress-bar>
         <span>{{ duration | duration }}</span>
       </div>
     </div>
 
-    <div>
+    <div class="volume-controls">
       <button mat-icon-button (click)="toggleMute()">
         <mat-icon>{{ (volume$ | async) === 0 ? 'volume_off' : 'volume_up' }}</mat-icon>
       </button>
@@ -43,6 +48,5 @@
                (input)="setVolume($event)">
       </mat-slider>
     </div>
-
-
+  </div>
 </div>

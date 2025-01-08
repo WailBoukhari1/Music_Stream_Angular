@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -10,14 +10,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { Store } from '@ngrx/store';
 import { Track } from '../../models/track.model';
 import * as TrackActions from '../../store/track/track.actions';
-import { FileValidationService } from '../../services/file-validation.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { IndexedDBService } from '../../services/indexed-db.service';
 import { AudioService } from '../../services/audio.service';
 import { FileSizePipe } from '../../pipes/file-size.pipe';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-upload-track',
+  templateUrl: './upload-track.component.html',
+  styleUrls: ['./upload-track.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -29,76 +29,84 @@ import { FileSizePipe } from '../../pipes/file-size.pipe';
     MatProgressBarModule,
     MatIconModule,
     FileSizePipe
-  ],
-  templateUrl: './upload-track.component.html',
-  styleUrls: ['./upload-track.component.scss']
+  ]
 })
 export class UploadTrackComponent {
-  uploadForm = this.fb.group({
-    title: ['', [Validators.required, Validators.maxLength(50)]],
-    artist: ['', [Validators.required]],
-    description: ['', [Validators.maxLength(200)]],
-    category: ['pop' as const, [Validators.required]],
-    duration: [0]
-  });
-
+  uploadForm: FormGroup;
   selectedFile: File | null = null;
   selectedImage: File | null = null;
   imagePreview: string | null = null;
   isUploading = false;
   uploadProgress = 0;
+  isDragging = false;
+  categories: ('pop' | 'rock' | 'rap' | 'cha3bi')[] = ['pop', 'rock', 'rap', 'cha3bi'];
 
   constructor(
     private fb: FormBuilder,
-    private store: Store,
-    private fileValidation: FileValidationService,
-    private snackBar: MatSnackBar,
-    private indexedDB: IndexedDBService,
     public dialogRef: MatDialogRef<UploadTrackComponent>,
-    private audioService: AudioService
-  ) {}
+    private store: Store,
+    private audioService: AudioService,
+    private notification: NotificationService
+  ) {
+    this.uploadForm = this.fb.group({
+      title: ['', [Validators.required, Validators.maxLength(50)]],
+      artist: ['', [Validators.required, Validators.maxLength(50)]],
+      category: ['pop', Validators.required],
+      description: ['', Validators.maxLength(200)]
+    });
+  }
 
-  async onFileSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      const validation = this.fileValidation.validateAudioFile(file);
-      if (!validation.isValid) {
-        this.snackBar.open(validation.error || 'Invalid file', 'Close', {
-          duration: 3000
-        });
-        return;
-      }
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+
+    const files = event.dataTransfer?.files;
+    if (files?.length) {
+      this.handleFileSelection(files[0]);
+    }
+  }
+
+  onAudioFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) {
+      this.handleFileSelection(input.files[0]);
+    }
+  }
+
+  handleFileSelection(file: File) {
+    if (file.type.startsWith('audio/')) {
       this.selectedFile = file;
-      // Calculate duration when file is selected
-      const duration = await this.audioService.calculateDuration(file);
-      this.uploadForm.patchValue({
-        title: file.name.replace(/\.[^/.]+$/, ''),
-        duration: duration
-      });
+    } else {
+      this.notification.error('Please select an audio file');
     }
   }
 
   onImageSelected(event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      const validation = this.fileValidation.validateImageFile(file);
-      if (!validation.isValid) {
-        this.snackBar.open(validation.error || 'Invalid image', 'Close', {
-          duration: 3000
-        });
-        return;
+    const input = event.target as HTMLInputElement;
+    if (input.files?.length) {
+      const file = input.files[0];
+      if (file.type.startsWith('image/')) {
+        this.selectedImage = file;
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.imagePreview = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      } else {
+        this.notification.error('Please select an image file');
       }
-      this.selectedImage = file;
-      this.createImagePreview(file);
     }
   }
 
-  private createImagePreview(file: File) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.imagePreview = reader.result as string;
-    };
-    reader.readAsDataURL(file);
+  removeAudioFile() {
+    this.selectedFile = null;
   }
 
   removeImage() {
@@ -112,13 +120,6 @@ export class UploadTrackComponent {
       this.uploadProgress = 0;
 
       try {
-        const progressInterval = setInterval(() => {
-          if (this.uploadProgress < 90) {
-            this.uploadProgress += 10;
-          }
-        }, 300);
-
-        // Get duration using AudioService
         const duration = await this.audioService.calculateDuration(this.selectedFile);
 
         const track: Track = {
@@ -126,30 +127,24 @@ export class UploadTrackComponent {
           title: this.uploadForm.get('title')?.value || '',
           artist: this.uploadForm.get('artist')?.value || '',
           description: this.uploadForm.get('description')?.value || '',
-          category: (this.uploadForm.get('category')?.value || 'pop') as 'pop' | 'rock' | 'rap' | 'cha3bi',
+          category: this.uploadForm.get('category')?.value,
           addedDate: new Date(),
           duration: duration,
-          thumbnailUrl: this.imagePreview || undefined,
-          isFavorite: false,
-          order: 0
+          thumbnailUrl: this.imagePreview || undefined
         };
 
-        // Dispatch addTrack action
         this.store.dispatch(TrackActions.addTrack({ 
           track, 
           audioFile: this.selectedFile,
-          thumbnail: this.selectedImage || null
+          thumbnail: this.selectedImage
         }));
 
-        clearInterval(progressInterval);
         this.uploadProgress = 100;
         this.dialogRef.close(true);
         
       } catch (error) {
         console.error('Upload failed:', error);
-        this.snackBar.open('Upload failed. Please try again.', 'Close', {
-          duration: 3000
-        });
+        this.notification.error('Upload failed. Please try again.');
       } finally {
         this.isUploading = false;
       }
@@ -168,28 +163,11 @@ export class UploadTrackComponent {
     return '';
   }
 
-  async validateFiles(audioFile: File, imageFile?: File): Promise<boolean> {
-    // Audio file validation
-    if (audioFile.size > 15 * 1024 * 1024) {
-      this.snackBar.open('Audio file must not exceed 15MB', 'Close', { duration: 3000 });
-      return false;
-    }
-
-    const validAudioTypes = ['audio/mp3', 'audio/wav', 'audio/ogg'];
-    if (!validAudioTypes.includes(audioFile.type)) {
-      this.snackBar.open('Only MP3, WAV, and OGG formats are allowed', 'Close', { duration: 3000 });
-      return false;
-    }
-
-    // Image file validation
-    if (imageFile) {
-      const validImageTypes = ['image/jpeg', 'image/png'];
-      if (!validImageTypes.includes(imageFile.type)) {
-        this.snackBar.open('Only JPEG and PNG images are allowed', 'Close', { duration: 3000 });
-        return false;
-      }
-    }
-
-    return true;
+  get selectedFileInfo() {
+    if (!this.selectedFile) return null;
+    return {
+      name: this.selectedFile.name,
+      size: this.selectedFile.size
+    };
   }
 }

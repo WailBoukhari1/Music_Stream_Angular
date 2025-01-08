@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { UploadTrackComponent } from '../upload-track/upload-track.component';
 
 import { Track } from '../../models/track.model';
 import { AudioService } from '../../services/audio.service';
@@ -291,5 +292,17 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
         track !== undefined && track.isFavorite === true
       ))
     );
+  }
+
+  openUploadDialog(): void {
+    const dialogRef = this.dialog.open(UploadTrackComponent, {
+      width: '90vw',
+      maxWidth: '1000px',
+      height: 'auto',
+      maxHeight: '90vh',
+      panelClass: 'upload-dialog-container'
+    });
+    
+    // ... rest of the code
   }
 } 

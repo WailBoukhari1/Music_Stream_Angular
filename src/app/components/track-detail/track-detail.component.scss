@@ -1,32 +1,374 @@
-.lyrics-card {
-  margin: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-
-  .lyrics-content {
-    margin-top: 2rem;
-    white-space: pre-line;
-    line-height: 1.6;
-    font-size: 1.1rem;
+.track-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2.5rem;
+  color: white;
+  position: relative;
+  
+  // Background Gradient Effect
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 400px;
+    background: linear-gradient(180deg, rgba(220, 20, 60, 0.15) 0%, rgba(0, 0, 0, 0) 100%);
+    pointer-events: none;
+    z-index: -1;
   }
 
-  .song-description {
-    margin: 1rem 0;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
-  }
-
-  .media-grid {
+  // Track Header Section
+  .track-header {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
-
-    .media-item img {
-      width: 100%;
-      height: 200px;
-      object-fit: cover;
-      border-radius: 8px;
+    grid-template-columns: 350px 1fr;
+    gap: 4rem;
+    margin-bottom: 4rem;
+    position: relative;
+    
+    // Glassmorphism Card Effect
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2rem;
+      background: linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.02));
+      border-radius: 24px;
+      backdrop-filter: blur(10px);
+      z-index: -1;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
+    
+    @media (max-width: 968px) {
+      grid-template-columns: 300px 1fr;
+      gap: 3rem;
+    }
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .track-thumbnail {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: center;
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+      }
+
+      &:hover {
+        transform: scale(1.02) translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    .track-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 1rem 0;
+
+      .track-meta {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        font-size: 0.9375rem;
+        color: rgba(255, 255, 255, 0.7);
+
+        .track-category {
+          background: linear-gradient(135deg, rgba(220, 20, 60, 0.15) 0%, rgba(220, 20, 60, 0.1) 100%);
+          color: #ff1464;
+          padding: 0.625rem 1.25rem;
+          border-radius: 100px;
+          font-weight: 600;
+          letter-spacing: 0.5px;
+          border: 1px solid rgba(220, 20, 60, 0.2);
+          backdrop-filter: blur(5px);
+        }
+
+        .track-duration {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 100px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+
+          mat-icon {
+            font-size: 1.1rem;
+            width: 1.1rem;
+            height: 1.1rem;
+            color: rgba(255, 255, 255, 0.6);
+          }
+        }
+      }
+
+      .track-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin: 0;
+        line-height: 1.1;
+        letter-spacing: -1.5px;
+        background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        
+        @media (max-width: 768px) {
+          font-size: 2.5rem;
+        }
+      }
+
+      .track-artist {
+        font-size: 1.75rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin: 0;
+        font-weight: 500;
+        letter-spacing: -0.5px;
+      }
+
+      .track-actions {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        margin-top: 2rem;
+
+        button[mat-raised-button] {
+          background: linear-gradient(135deg, #dc143c 0%, #ff1464 100%);
+          padding: 1rem 2.5rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 0.875rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border-radius: 100px;
+          font-size: 1.125rem;
+          letter-spacing: 0.3px;
+          box-shadow: 0 8px 24px rgba(220, 20, 60, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(220, 20, 60, 0.35);
+            filter: brightness(1.1);
+          }
+
+          &:active {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(220, 20, 60, 0.3);
+          }
+
+          mat-icon {
+            font-size: 2rem;
+            width: 2rem;
+            height: 2rem;
+          }
+
+          &:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+            cursor: not-allowed;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+          }
+        }
+
+        button[mat-icon-button] {
+          width: 52px;
+          height: 52px;
+          color: rgba(255, 255, 255, 0.9);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border: 2px solid rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+
+          mat-icon {
+            font-size: 1.75rem;
+            width: 1.75rem;
+            height: 1.75rem;
+            transition: all 0.3s ease;
+          }
+
+          &:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.08);
+
+            mat-icon {
+              transform: scale(1.1) rotate(5deg);
+            }
+          }
+
+          &:active {
+            transform: translateY(-1px);
+          }
+
+          &[color="warn"] {
+            &:hover {
+              color: #ff4d4d;
+              border-color: rgba(244, 67, 54, 0.4);
+              background: rgba(244, 67, 54, 0.15);
+              
+              mat-icon {
+                transform: scale(1.1) rotate(-5deg);
+              }
+            }
+          }
+
+          &.edit-button:hover {
+            color: #ffd700;
+            border-color: rgba(255, 215, 0, 0.4);
+            background: rgba(255, 215, 0, 0.15);
+            
+            mat-icon {
+              transform: scale(1.1) rotate(5deg);
+            }
+          }
+        }
+
+        @media (max-width: 768px) {
+          flex-wrap: wrap;
+          gap: 1rem;
+          
+          button[mat-raised-button] {
+            flex: 1;
+            min-width: 200px;
+          }
+        }
+      }
+    }
+  }
+
+  // Track Description Section
+  .track-description {
+    position: relative;
+    
+    mat-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, 
+          transparent 0%, 
+          rgba(255, 255, 255, 0.1) 50%, 
+          transparent 100%
+        );
+      }
+
+      h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 1.75rem;
+        color: rgba(255, 255, 255, 0.9);
+        letter-spacing: -0.5px;
+        position: relative;
+        display: inline-block;
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -0.5rem;
+          left: 0;
+          width: 2rem;
+          height: 2px;
+          background: linear-gradient(90deg, #dc143c, transparent);
+        }
+      }
+
+      p {
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.8;
+        margin: 0 0 1.5rem;
+        font-size: 1.125rem;
+        letter-spacing: 0.2px;
+
+        &:last-child {
+          margin-bottom: 0;
+          font-size: 0.875rem;
+          color: rgba(255, 255, 255, 0.5);
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+  }
+
+  // Enhanced Loading Skeleton
+  .skeleton-loader {
+    .skeleton-header {
+      height: 400px;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.03) 100%
+      );
+      background-size: 200% 100%;
+      animation: loading 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      border-radius: 24px;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.08),
+          transparent
+        );
+        animation: shimmer 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+    }
+
+    .skeleton-body {
+      height: 250px;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.03) 100%
+      );
+      background-size: 200% 100%;
+      animation: loading 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      border-radius: 20px;
+    }
+  }
+
+  @keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 }
