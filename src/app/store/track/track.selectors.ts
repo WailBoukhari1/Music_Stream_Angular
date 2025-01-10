@@ -1,22 +1,26 @@
 import { createSelector } from '@ngrx/store';
 import { TrackState, adapter } from './track.reducer';
-import { Track } from '../../models/track.model';
 
-export const selectTrackState = (state: { tracks: TrackState }) => state.tracks;
+export const selectTrackState = (state: any) => state.tracks;
 
-const { selectAll } = adapter.getSelectors();
+const { selectAll, selectEntities } = adapter.getSelectors();
 
 export const selectAllTracks = createSelector(
   selectTrackState,
   selectAll
 );
 
+export const selectTrackById = (id: string) => createSelector(
+  selectTrackState,
+  (state: TrackState) => selectEntities(state)[id]
+);
+
 export const selectCurrentTrack = createSelector(
   selectTrackState,
-  (state: TrackState, props: { id: string }) => state.entities[props.id]
+  (state: TrackState) => state.currentTrack
 );
 
 export const selectFavoriteTracks = createSelector(
   selectAllTracks,
-  (tracks: Track[]) => tracks.filter(track => track.isFavorite)
+  (tracks) => tracks.filter(track => track.isFavorite)
 ); 

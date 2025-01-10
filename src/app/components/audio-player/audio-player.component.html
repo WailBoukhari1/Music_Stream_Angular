@@ -3,9 +3,13 @@
     <div class="now-playing">
       <div class="thumbnail-wrapper">
         <img [src]="(currentTrack$ | async)?.thumbnailUrl || 'assets/default-cover.png'" 
-             [alt]="(currentTrack$ | async)?.title || 'Track'">
+             [alt]="(currentTrack$ | async)?.title || 'Track'"
+             (error)="handleImageError($event)">
         <div class="play-overlay">
           <mat-icon>play_arrow</mat-icon>
+        </div>
+        <div class="default-thumbnail" *ngIf="!((currentTrack$ | async)?.thumbnailUrl)">
+          <mat-icon>music_note</mat-icon>
         </div>
       </div>
       <div class="track-info">
@@ -14,38 +18,41 @@
       </div>
     </div>
 
-    <div class="controls">
-      <div class="buttons">
-        <button mat-icon-button>
-          <mat-icon>skip_previous</mat-icon>
-        </button>
-        <button mat-fab (click)="togglePlay()">
-          <mat-icon>{{ (isPlaying$ | async) ? 'pause' : 'play_arrow' }}</mat-icon>
-        </button>
-        <button mat-icon-button>
-          <mat-icon>skip_next</mat-icon>
-        </button>
-      </div>
+    <div class="player-controls">
+      <button mat-icon-button (click)="playPrevious()">
+        <mat-icon>skip_previous</mat-icon>
+      </button>
       
-      <div class="progress-container">
-        <span>{{ currentTime$ | async | duration }}</span>
-        <mat-progress-bar 
-          mode="determinate"
-          [value]="getProgressPercentage(currentTime$ | async)"
-          (click)="seekTo($event)">
-        </mat-progress-bar>
-        <span>{{ duration | duration }}</span>
-      </div>
+      <button mat-fab (click)="togglePlay()" class="play-button">
+        <mat-icon>{{(isPlaying$ | async) ? 'pause' : 'play_arrow'}}</mat-icon>
+      </button>
+      
+      <button mat-icon-button (click)="playNext()">
+        <mat-icon>skip_next</mat-icon>
+      </button>
+    </div>
+
+    <div class="progress-container">
+      <span>{{ currentTime$ | async | duration }}</span>
+      <mat-progress-bar 
+        mode="determinate"
+        [value]="getProgressPercentage(currentTime$ | async)"
+        (click)="seekTo($event)">
+      </mat-progress-bar>
+      <span>{{ duration | duration }}</span>
     </div>
 
     <div class="volume-controls">
       <button mat-icon-button (click)="toggleMute()">
-        <mat-icon>{{ (volume$ | async) === 0 ? 'volume_off' : 'volume_up' }}</mat-icon>
+        <mat-icon>
+          {{(volume$ | async) === 0 ? 'volume_off' : 
+            (volume$ | async)! < 0.5 ? 'volume_down' : 'volume_up'}}
+        </mat-icon>
       </button>
-      <mat-slider discrete min="0" max="100">
+      <mat-slider class="volume-slider" discrete>
         <input matSliderThumb
-               [value]="(volume$ | async) ? (volume$ | async)! * 100 : 0"
-               (input)="setVolume($event)">
+               [value]="(volume$ | async)! * 100"
+               (input)="onVolumeChange($event)">
       </mat-slider>
     </div>
   </div>

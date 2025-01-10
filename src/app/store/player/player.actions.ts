@@ -21,3 +21,10 @@ export const setError = createAction(
   props<{ message: string }>()
 );
 export const loadPersistedState = createAction('[Player] Load Persisted State');
+export const playNext = createAction('[Player] Play Next');
+export const playPrevious = createAction('[Player] Play Previous');
+export const playSuccess = createAction('[Player] Play Success');
+export const seek = createAction(
+  '[Player] Seek',
+  props<{ time: number }>()
+);

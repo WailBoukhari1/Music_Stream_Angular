@@ -24,7 +24,8 @@ export const routes: Routes = [
   },
   {
     path: 'playlist/favorites',
-    component: PlaylistComponent
+    loadComponent: () =>import ('./components/playlist/playlist.component')
+      .then(m => m.PlaylistComponent)
   },
   {
     path: '**',

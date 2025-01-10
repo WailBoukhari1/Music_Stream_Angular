@@ -10,12 +10,14 @@ export const adapter: EntityAdapter<Track> = createEntityAdapter<Track>();
 export interface TrackState extends EntityState<Track> {
   loading: boolean;
   error: string | null;
+  currentTrack?: Track;
 }
 
 // Initialize state using adapter
 export const initialState: TrackState = adapter.getInitialState({
   loading: false,
-  error: null
+  error: null,
+  currentTrack: undefined
 });
 
 export const trackReducer = createReducer(
@@ -33,20 +35,20 @@ export const trackReducer = createReducer(
       error: null
     });
   }),
-  on(TrackActions.loadTrack, state => ({
+  on(TrackActions.loadTrack, (state) => ({
     ...state,
     loading: true,
     error: null
   })),
   on(TrackActions.loadTrackSuccess, (state, { track }) => ({
     ...state,
-    entities: { ...state.entities, [track.id]: track },
+    currentTrack: track,
     loading: false
   })),
-  on(TrackActions.loadTracksFailure, TrackActions.loadTrackFailure, (state, { error }) => ({
+  on(TrackActions.loadTrackFailure, (state, { error }) => ({
     ...state,
-    loading: false,
-    error
+    error,
+    loading: false
   })),
   on(TrackActions.deleteTrack, state => ({
     ...state,

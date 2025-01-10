@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { FormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
@@ -18,6 +19,7 @@ import { DurationPipe } from '../../pipes/duration.pipe';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatIconModule,
     MatSliderModule,
     MatButtonModule,
@@ -118,13 +120,16 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
 
   toggleMute() {
     this.volume$.pipe(take(1)).subscribe(volume => {
-      this.setVolume(volume > 0 ? 0 : 100);
+      const newVolume = volume > 0 ? 0 : 1;
+      this.audioService.setVolume(newVolume);
+      this.store.dispatch(PlayerActions.setVolume({ volume: newVolume }));
     });
   }
 
   setVolume(event: any) {
     const value = event.target?.value ?? event;
-    this.audioService.setVolume(value / 100);
+    const volume = Math.max(0, Math.min(1, value / 100));
+    this.store.dispatch(PlayerActions.setVolume({ volume }));
   }
 
   ngOnDestroy() {
@@ -139,5 +144,25 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
 
   getProgressPercentage(currentTime: number | null): number {
     return ((currentTime || 0) / (this.duration || 1)) * 100;
+  }
+
+  playPrevious() {
+    this.store.dispatch(PlayerActions.playPrevious());
+  }
+
+  playNext() {
+    this.store.dispatch(PlayerActions.playNext());
+  }
+
+  onVolumeChange(event: any) {
+    const value = event.target?.value ?? event;
+    const volume = Math.max(0, Math.min(1, value / 100));
+    this.audioService.setVolume(volume);
+    this.store.dispatch(PlayerActions.setVolume({ volume }));
+  }
+
+  handleImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.src = 'assets/default-cover.png';
   }
 } 

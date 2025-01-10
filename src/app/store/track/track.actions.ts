@@ -23,7 +23,7 @@ export const loadTrackSuccess = createAction(
 
 export const loadTrackFailure = createAction(
   '[Track] Load Track Failure',
-  props<{ error: any }>()
+  props<{ error: string }>()
 );
 
 export const addTrack = createAction(
@@ -73,7 +73,7 @@ export const setError = createAction(
 
 export const updateTrack = createAction(
   '[Track] Update Track',
-  props<{ track: Track; thumbnail?: File | null }>()
+  props<{ track: Track }>()
 );
 
 export const updateTrackSuccess = createAction(
@@ -83,7 +83,7 @@ export const updateTrackSuccess = createAction(
 
 export const updateTrackFailure = createAction(
   '[Track] Update Track Failure',
-  props<{ error: string }>()
+  props<{ error: any }>()
 );
 
 export const playTrack = createAction(

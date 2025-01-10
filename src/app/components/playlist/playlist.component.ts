@@ -40,7 +40,7 @@ export class PlaylistComponent implements OnInit {
     private router: Router,
     private audioService: AudioService
   ) {
-    this.favoriteTracks$ = this.store.select((state: AppState) => selectFavoriteTracks(state));
+    this.favoriteTracks$ = this.store.select(selectFavoriteTracks);
   }
 
   ngOnInit() {}

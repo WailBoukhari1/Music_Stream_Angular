@@ -288,7 +288,7 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
   // Add a method to get favorite tracks
   getFavoriteTracks(): Observable<Track[]> {
     return this.store.select(selectAllTracks).pipe(
-      map(tracks => tracks.filter((track): track is Track => 
+      map(tracks => tracks.filter((track: Track | undefined): track is Track => 
         track !== undefined && track.isFavorite === true
       ))
     );

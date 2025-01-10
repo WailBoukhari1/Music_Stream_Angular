@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, Subject, filter } from 'rxjs';
+import { Observable, Subject, filter, tap } from 'rxjs';
 import { takeUntil, catchError, take } from 'rxjs/operators';
 import { Track } from '../../models/track.model';
 import * as TrackSelectors from '../../store/track/track.selectors';
@@ -25,7 +25,7 @@ import * as PlayerActions from '../../store/player/player.actions';
   imports: [MatIconModule, CommonModule, DurationPipe, MatCardModule]
 })
 export class TrackDetailComponent implements OnInit, OnDestroy {
-  track$: Observable<Track | null | undefined> = new Observable();
+  track$!: Observable<Track | null | undefined>;
   currentTrack?: Track;
   error: string | null = null;
   private destroy$ = new Subject<void>();
@@ -36,25 +36,37 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
     private store: Store<{ tracks: TrackState }>,
     private dialog: MatDialog,
     private audioService: AudioService,
-  ) {}
+  ) {
+    this.track$ = this.store.select(TrackSelectors.selectTrackById(this.route.snapshot.params['id']));
+  }
 
   ngOnInit() {
+    // First load all tracks to ensure we have data
+    this.store.dispatch(TrackActions.loadTracks());
+
+    // Then handle the route params
     this.route.paramMap
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
         const trackId = params.get('id');
         if (trackId) {
+          // Set up the track$ observable before dispatching load action
+          this.track$ = this.store.select(TrackSelectors.selectTrackById(trackId))
+            .pipe(
+              takeUntil(this.destroy$),
+              tap(track => {
+                if (track) {
+                  this.currentTrack = track;
+                  this.error = null;
+                } else {
+                  this.error = 'Loading track...';
+                }
+              })
+            );
+
+          // Then dispatch the load action
           this.store.dispatch(TrackActions.loadTrack({ id: trackId }));
         }
-      });
-
-    this.track$
-      .pipe(
-        takeUntil(this.destroy$),
-        filter((track): track is Track => !!track)
-      )
-      .subscribe(track => {
-        this.currentTrack = track;
       });
   }
 

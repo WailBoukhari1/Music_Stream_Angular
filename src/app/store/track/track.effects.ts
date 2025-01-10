@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Actions, ofType, createEffect } from '@ngrx/effects';
 import { of } from 'rxjs';
-import { catchError, map, mergeMap } from 'rxjs/operators';
+import { catchError, map, mergeMap, switchMap } from 'rxjs/operators';
 import { TrackService } from '../../services/track.service';
 import * as TrackActions from './track.actions';
 import { IndexedDBService } from '../../services/indexed-db.service';
@@ -33,10 +33,18 @@ export class TrackEffects {
   loadTrack$ = createEffect(() =>
     this.actions$.pipe(
       ofType(TrackActions.loadTrack),
-      mergeMap(action =>
-        this.trackService.getTrackById(action.id).pipe(
-          map(track => TrackActions.loadTrackSuccess({ track })),
-          catchError(error => of(TrackActions.loadTrackFailure({ error })))
+      switchMap(({ id }) => 
+        from(this.indexedDBService.getTrackById(id)).pipe(
+          map(track => {
+            if (!track) {
+              throw new Error('Track not found');
+            }
+            return TrackActions.loadTrackSuccess({ track });
+          }),
+          catchError(error => {
+            console.error('Error loading track:', error);
+            return of(TrackActions.loadTrackFailure({ error: error.message }));
+          })
         )
       )
     )
@@ -76,17 +84,13 @@ export class TrackEffects {
     )
   );
 
-  updateTrack$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(TrackActions.updateTrack),
-      mergeMap(action =>
-        this.trackService.updateTrack(action.track).pipe(
-          map(track => TrackActions.updateTrackSuccess({ track })),
-          catchError(error => of(TrackActions.updateTrackFailure({ error: error.message })))
-        )
-      )
-    )
-  );
+  updateTrack$ = createEffect(() => this.actions$.pipe(
+    ofType(TrackActions.updateTrack),
+    mergeMap(({ track }) => from(this.indexedDBService.updateTrack(track)).pipe(
+      map(() => TrackActions.updateTrackSuccess({ track })),
+      catchError(error => of(TrackActions.updateTrackFailure({ error })))
+    ))
+  ));
 
   toggleFavorite$ = createEffect(() =>
     this.actions$.pipe(

@@ -15,6 +15,7 @@ import { FileSizePipe } from '../../pipes/file-size.pipe';
 import { NotificationService } from '../../services/notification.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-upload-track',
@@ -100,6 +101,19 @@ export class UploadTrackComponent implements OnInit, OnDestroy {
   handleFileSelection(file: File) {
     if (file.type.startsWith('audio/')) {
       this.selectedFile = file;
+      
+      // Get the file name without extension and convert to title case
+      const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+      const titleCased = fileName
+        .replace(/-|_/g, ' ') // Replace dashes and underscores with spaces
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+      
+      // Update the form's title field
+      this.uploadForm.patchValue({
+        title: titleCased
+      });
     } else {
       this.notification.error('Please select an audio file');
     }
@@ -122,7 +136,7 @@ export class UploadTrackComponent implements OnInit, OnDestroy {
     }
   }
 
-  removeAudioFile() {
+  removeFile() {
     this.selectedFile = null;
   }
 
@@ -137,12 +151,12 @@ export class UploadTrackComponent implements OnInit, OnDestroy {
       this.uploadProgress = 0;
 
       try {
-        const duration = await this.audioService.calculateDuration(this.selectedFile);
+        const duration = await firstValueFrom(this.audioService.calculateDuration(this.selectedFile));
 
         const track: Track = {
           id: crypto.randomUUID(),
-          title: this.uploadForm.get('title')?.value || '',
-          artist: this.uploadForm.get('artist')?.value || '',
+          title: this.uploadForm.get('title')?.value || this.selectedFile.name,
+          artist: this.uploadForm.get('artist')?.value || 'Unknown Artist',
           description: this.uploadForm.get('description')?.value || '',
           category: this.uploadForm.get('category')?.value,
           addedDate: new Date(),
@@ -186,5 +200,17 @@ export class UploadTrackComponent implements OnInit, OnDestroy {
       name: this.selectedFile.name,
       size: this.selectedFile.size
     };
+  }
+
+  public formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  close() {
+    this.dialogRef.close();
   }
 }
