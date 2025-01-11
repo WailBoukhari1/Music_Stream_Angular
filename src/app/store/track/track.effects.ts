@@ -84,13 +84,23 @@ export class TrackEffects {
     )
   );
 
-  updateTrack$ = createEffect(() => this.actions$.pipe(
-    ofType(TrackActions.updateTrack),
-    mergeMap(({ track }) => from(this.indexedDBService.updateTrack(track)).pipe(
-      map(() => TrackActions.updateTrackSuccess({ track })),
-      catchError(error => of(TrackActions.updateTrackFailure({ error })))
-    ))
-  ));
+  updateTrack$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(TrackActions.updateTrack),
+      mergeMap(({ track }) =>
+        from(this.indexedDBService.updateTrack(track)).pipe(
+          map(() => {
+            this.notification.success('Track updated successfully');
+            return TrackActions.loadTracks();
+          }),
+          catchError(error => {
+            this.notification.error('Failed to update track');
+            return of(TrackActions.updateTrackFailure({ error: error.message }));
+          })
+        )
+      )
+    )
+  );
 
   toggleFavorite$ = createEffect(() =>
     this.actions$.pipe(

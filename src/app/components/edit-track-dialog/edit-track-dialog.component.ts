@@ -118,6 +118,7 @@ export class EditTrackDialogComponent {
       };
 
       this.store.dispatch(TrackActions.updateTrack({ track: updatedTrack }));
+      this.store.dispatch(TrackActions.loadTracks());
       this.dialogRef.close(true);
     }
   }
