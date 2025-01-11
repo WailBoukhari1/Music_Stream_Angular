@@ -36,6 +36,30 @@
         </mat-card-content>
       </mat-card>
     </div>
+
+    <div class="lyrics-section">
+      <h2>Lyrics</h2>
+      
+      <ng-container *ngIf="lyrics$ | async as lyrics; else loadingLyrics">
+        <div class="lyrics-content" *ngIf="lyrics; else noLyrics">
+          <pre>{{ lyrics }}</pre>
+        </div>
+      </ng-container>
+
+      <ng-template #loadingLyrics>
+        <div class="loading-lyrics" *ngIf="isLoadingLyrics">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Loading lyrics...</p>
+        </div>
+      </ng-template>
+
+      <ng-template #noLyrics>
+        <div class="no-lyrics">
+          <mat-icon>lyrics</mat-icon>
+          <p>No lyrics found for this track</p>
+        </div>
+      </ng-template>
+    </div>
   </ng-container>
 
   <ng-template #loading>
