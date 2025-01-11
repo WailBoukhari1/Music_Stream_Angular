@@ -12,7 +12,7 @@ import { DurationPipe } from '../../pipes/duration.pipe';
   template: `
     <div class="track-detail-dialog">
       <div class="track-image">
-        <img [src]="data.thumbnailUrl || 'assets/default-cover.png'" [alt]="data.title">
+        <img [src]="data.thumbnailUrl" [alt]="data.title">
       </div>
       
       <div class="track-info">

@@ -1,63 +1,88 @@
 import { createReducer, on } from '@ngrx/store';
+import { Track } from '../../models/track.model';
 import * as PlayerActions from './player.actions';
-import { Track, PlayerState as PlaybackState, LoadingState } from '../../models/track.model';
 
 export interface PlayerState {
   currentTrack: Track | null;
   isPlaying: boolean;
   currentTime: number;
+  duration: number;
   volume: number;
+  audioUrl: string | null;
   error: string | null;
-  loadingState: LoadingState;
-  playbackState: PlaybackState;
+  queue: Track[];
+  loading: boolean;
 }
 
 export const initialState: PlayerState = {
   currentTrack: null,
   isPlaying: false,
   currentTime: 0,
+  duration: 0,
   volume: 1,
+  audioUrl: null,
   error: null,
-  loadingState: 'success',
-  playbackState: 'stopped',
+  queue: [],
+  loading: false
 };
 
 export const playerReducer = createReducer(
   initialState,
-  on(PlayerActions.play, state => ({ 
-    ...state, 
-    isPlaying: true,
-    playbackState: 'playing' as PlaybackState,
-    loadingState: 'success' as LoadingState
-  })),
-  on(PlayerActions.pause, state => ({ 
-    ...state, 
-    isPlaying: false,
-    playbackState: 'paused' as PlaybackState
-  })),
+  
+  // Playback Control
+  on(PlayerActions.play, state => ({ ...state, isPlaying: true })),
+  on(PlayerActions.pause, state => ({ ...state, isPlaying: false })),
   on(PlayerActions.stop, state => ({ 
     ...state, 
     isPlaying: false, 
-    currentTime: 0,
-    playbackState: 'stopped' as PlaybackState
+    currentTime: 0 
   })),
-  on(PlayerActions.setTrack, (state, { track }) => ({ 
+  on(PlayerActions.togglePlay, state => ({ 
     ...state, 
+    isPlaying: !state.isPlaying 
+  })),
+
+  // Track Loading
+  on(PlayerActions.loadTrack, (state, { track }) => ({
+    ...state,
     currentTrack: track,
-    isPlaying: true,
-    playbackState: 'playing' as PlaybackState
+    loading: true,
+    error: null
   })),
-  on(PlayerActions.setCurrentTime, (state, { time }) => ({ 
-    ...state, 
-    currentTime: time 
+  on(PlayerActions.loadTrackSuccess, (state, { audioUrl }) => ({
+    ...state,
+    audioUrl,
+    loading: false,
+    isPlaying: true
   })),
-  on(PlayerActions.setVolume, (state, { volume }) => ({ 
-    ...state, 
-    volume 
+  on(PlayerActions.loadTrackFailure, (state, { error }) => ({
+    ...state,
+    error,
+    loading: false,
+    isPlaying: false
   })),
-  on(PlayerActions.setError, (state, { message }) => ({ 
-    ...state, 
-    error: message,
-    playbackState: 'stopped' as PlaybackState
+
+  // Playback State
+  on(PlayerActions.setCurrentTime, (state, { time }) => ({
+    ...state,
+    currentTime: time
   })),
+  on(PlayerActions.setDuration, (state, { duration }) => ({
+    ...state,
+    duration
+  })),
+  on(PlayerActions.setVolume, (state, { volume }) => ({
+    ...state,
+    volume
+  })),
+
+  // Queue Management
+  on(PlayerActions.addToQueue, (state, { track }) => ({
+    ...state,
+    queue: [...state.queue, track]
+  })),
+  on(PlayerActions.clearQueue, state => ({
+    ...state,
+    queue: []
+  }))
 ); 

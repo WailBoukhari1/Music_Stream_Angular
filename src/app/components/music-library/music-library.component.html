@@ -72,11 +72,11 @@
         
         <!-- Thumbnail Section -->
         <div class="thumbnail-container">
-          <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" 
+          <img [src]="track.thumbnailUrl" 
                [alt]="track.title || 'Track thumbnail'"
                class="track-thumbnail">
           
-          <div class="play-overlay" (click)="playTrack(track, $event)">
+          <div class="play-overlay" (click)="$event.stopPropagation(); playTrack(track)">
             <mat-icon>play_circle</mat-icon>
           </div>
         </div>

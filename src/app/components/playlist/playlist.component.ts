@@ -13,6 +13,7 @@ import * as TrackActions from '../../store/track/track.actions';
 import { Router } from '@angular/router';
 import { AudioService } from '../../services/audio.service';
 import { TrackState } from '../../store/track/track.reducer';
+import * as PlayerActions from '../../store/player/player.actions';
 
 interface AppState {
   tracks: TrackState;
@@ -45,10 +46,9 @@ export class PlaylistComponent implements OnInit {
 
   ngOnInit() {}
 
-  playTrack(track: Track) {
-    this.router.navigate(['/track', track.id]).then(() => {
-      this.audioService.playTrack(track);
-    });
+  playTrack(track: Track): void {
+    this.store.dispatch(PlayerActions.loadTrack({ track }));
+    this.audioService.play();
   }
 
   removeFromFavorites(track: Track, event: Event) {

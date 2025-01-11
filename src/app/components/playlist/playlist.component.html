@@ -18,7 +18,7 @@
          (click)="playTrack(track)">
       <div class="track-number">{{ i + 1 }}</div>
       <div class="track-thumbnail">
-        <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title">
+        <img [src]="track.thumbnailUrl" [alt]="track.title">
         <div class="play-overlay">
           <mat-icon>play_arrow</mat-icon>
         </div>

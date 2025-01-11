@@ -1,39 +1,44 @@
-import { createFeatureSelector, createSelector } from '@ngrx/store';
+import { createSelector } from '@ngrx/store';
 import { PlayerState } from './player.reducer';
 
-export const selectPlayerState = createFeatureSelector<PlayerState>('player');
+export const selectPlayer = (state: any) => state.player;
 
 export const selectCurrentTrack = createSelector(
-  selectPlayerState,
-  state => state.currentTrack
+  selectPlayer,
+  (state: PlayerState) => state.currentTrack
 );
 
 export const selectIsPlaying = createSelector(
-  selectPlayerState,
-  state => state.isPlaying
+  selectPlayer,
+  (state: PlayerState) => state.isPlaying
 );
 
 export const selectCurrentTime = createSelector(
-  selectPlayerState,
-  state => state.currentTime
+  selectPlayer,
+  (state: PlayerState) => state.currentTime
+);
+
+export const selectDuration = createSelector(
+  selectPlayer,
+  (state: PlayerState) => state.duration
 );
 
 export const selectVolume = createSelector(
-  selectPlayerState,
-  state => state.volume
+  selectPlayer,
+  (state: PlayerState) => state.volume
 );
 
 export const selectError = createSelector(
-  selectPlayerState,
-  state => state.error
+  selectPlayer,
+  (state: PlayerState) => state.error
 );
 
-export const selectLoadingState = createSelector(
-  selectPlayerState,
-  (state: PlayerState) => state.loadingState
+export const selectQueue = createSelector(
+  selectPlayer,
+  (state: PlayerState) => state.queue
 );
 
-export const selectPlaybackState = createSelector(
-  selectPlayerState,
-  (state) => state.playbackState
+export const selectLoading = createSelector(
+  selectPlayer,
+  (state: PlayerState) => state.loading
 );

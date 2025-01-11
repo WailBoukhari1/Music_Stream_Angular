@@ -22,22 +22,8 @@ interface AudioFileRecord {
 export class IndexedDBService implements OnDestroy {
   private readonly DB_CONFIG = {
     name: 'musicPlayerDB',
-    version: 3,
+    version: 4,
     stores: ['tracks', 'audioFiles', 'thumbnails']
-  };
-
-  private readonly FILE_CONSTRAINTS = {
-    maxSize: 15 * 1024 * 1024, // 15MB in bytes
-    validAudioTypes: [
-      'audio/mp3',
-      'audio/mpeg',
-      'audio/wav',
-      'audio/wave',
-      'audio/x-wav',
-      'audio/ogg',
-      'audio/vorbis'
-    ] as const,
-    validExtensions: ['.mp3', '.wav', '.ogg'] as const
   };
 
   private db: Promise<IDBDatabase>;

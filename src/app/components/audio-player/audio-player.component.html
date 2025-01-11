@@ -2,9 +2,8 @@
   <div class="player-container">
     <div class="now-playing">
       <div class="thumbnail-wrapper">
-        <img [src]="(currentTrack$ | async)?.thumbnailUrl || 'assets/default-cover.png'" 
-             [alt]="(currentTrack$ | async)?.title || 'Track'"
-             (error)="handleImageError($event)">
+        <img [src]="(currentTrack$ | async)?.thumbnailUrl" 
+             [alt]="(currentTrack$ | async)?.title || 'Track'">
         <div class="play-overlay">
           <mat-icon>play_arrow</mat-icon>
         </div>

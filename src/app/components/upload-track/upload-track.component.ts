@@ -151,7 +151,7 @@ export class UploadTrackComponent implements OnInit, OnDestroy {
       this.uploadProgress = 0;
 
       try {
-        const duration = await firstValueFrom(this.audioService.calculateDuration(this.selectedFile));
+        const duration = await this.audioService.calculateDuration(this.selectedFile);
 
         const track: Track = {
           id: crypto.randomUUID(),
@@ -160,7 +160,7 @@ export class UploadTrackComponent implements OnInit, OnDestroy {
           description: this.uploadForm.get('description')?.value || '',
           category: this.uploadForm.get('category')?.value,
           addedDate: new Date(),
-          duration: duration,
+          duration: duration as number,
           thumbnailUrl: this.imagePreview || undefined
         };
 

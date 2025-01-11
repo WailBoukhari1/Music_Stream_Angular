@@ -76,8 +76,8 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
   }
 
   playTrack(track: Track): void {
-    this.store.dispatch(PlayerActions.setTrack({ track }));
-    this.audioService.playTrack(track);
+    this.store.dispatch(PlayerActions.loadTrack({ track }));
+    this.audioService.play();
   }
 
   editTrack(track: Track): void {
@@ -102,7 +102,4 @@ export class TrackDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  onImageError(event: any) {
-    event.target.src = 'assets/default-cover.png';
-  }
 } 

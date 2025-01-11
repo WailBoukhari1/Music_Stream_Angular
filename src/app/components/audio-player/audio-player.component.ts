@@ -35,7 +35,7 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   currentTime$: Observable<number>;
   volume$: Observable<number>;
   error$: Observable<string | null>;
-  loadingState$: Observable<'loading' | 'error' | 'success'>;
+  loading$: Observable<boolean>;
   duration = 0;
   isMiniMode = false;
   previewTime: number | null = null;
@@ -43,7 +43,6 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   showQueue = false;
   private destroy$ = new Subject<void>();
   private isDragging = false;
-  playbackState$ = this.store.select(PlayerSelectors.selectPlaybackState);
   showTranscript = false;
 
   constructor(
@@ -59,7 +58,7 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
     this.volume$ = this.store.select(PlayerSelectors.selectVolume)
       .pipe(takeUntil(this.destroy$));
     this.error$ = this.store.select(PlayerSelectors.selectError);
-    this.loadingState$ = this.store.select(PlayerSelectors.selectLoadingState);
+    this.loading$ = this.store.select(PlayerSelectors.selectLoading);
   }
 
   ngOnInit() {
@@ -75,13 +74,13 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
         this.duration = duration;
       });
 
-    this.playbackState$
+    this.loading$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(state => {
-        console.log('Playback state:', state);
+      .subscribe((loading: boolean) => {
+        console.log('Loading state:', loading);
       });
 
-      this.error$
+    this.error$
       .pipe(takeUntil(this.destroy$))
       .subscribe(error => {
         if (error) {
@@ -119,11 +118,13 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
   }
 
   toggleMute() {
-    this.volume$.pipe(take(1)).subscribe(volume => {
-      const newVolume = volume > 0 ? 0 : 1;
-      this.audioService.setVolume(newVolume);
-      this.store.dispatch(PlayerActions.setVolume({ volume: newVolume }));
-    });
+    this.volume$
+      .pipe(take(1))
+      .subscribe((volume: number) => {
+        const newVolume = volume > 0 ? 0 : 1;
+        this.audioService.setVolume(newVolume);
+        this.store.dispatch(PlayerActions.setVolume({ volume: newVolume }));
+      });
   }
 
   setVolume(event: any) {
@@ -161,8 +162,5 @@ export class AudioPlayerComponent implements OnInit, OnDestroy {
     this.store.dispatch(PlayerActions.setVolume({ volume }));
   }
 
-  handleImageError(event: Event) {
-    const img = event.target as HTMLImageElement;
-    img.src = 'assets/default-cover.png';
-  }
+
 } 

@@ -1,115 +1,142 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, from, Observable } from 'rxjs';
+import { Store } from '@ngrx/store';
+import { BehaviorSubject, fromEvent, map, Observable } from 'rxjs';
 import { Track } from '../models/track.model';
+import * as PlayerActions from '../store/player/player.actions';
 import { IndexedDBService } from './indexed-db.service';
-import { switchMap, map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AudioService {
-  private audio = new Audio();
-  private audioContext: AudioContext | null = null;
-  private gainNode: GainNode | null = null;
+  private audio: HTMLAudioElement;
+  private audioContext: AudioContext;
+  private isLoadingTrack = false;
+  duration$: Observable<number>;
   
-  duration$ = new BehaviorSubject<number>(0);
-  currentTime$ = new BehaviorSubject<number>(0);
-  volume$ = new BehaviorSubject<number>(1);
-
-  constructor(private indexedDB: IndexedDBService) {
-    this.setupEventListeners();
-    this.initAudioContext();
+  constructor(
+    private store: Store,
+    private indexedDBService: IndexedDBService
+  ) {
+    this.audio = new Audio();
+    this.audioContext = new AudioContext();
+    this.duration$ = fromEvent(this.audio, 'durationchange').pipe(
+      map(() => this.audio.duration)
+    );
+    
+    // Set up audio event listeners
+    this.setupAudioEvents();
   }
 
-  private setupEventListeners() {
-    this.audio.addEventListener('loadedmetadata', () => {
-      this.duration$.next(this.audio.duration);
+  private setupAudioEvents() {
+    // Time Update
+    fromEvent(this.audio, 'timeupdate').subscribe(() => {
+      this.store.dispatch(PlayerActions.setCurrentTime({ 
+        time: this.audio.currentTime 
+      }));
     });
 
-    this.audio.addEventListener('timeupdate', () => {
-      this.currentTime$.next(this.audio.currentTime);
+    // Duration Change
+    fromEvent(this.audio, 'durationchange').subscribe(() => {
+      this.store.dispatch(PlayerActions.setDuration({ 
+        duration: this.audio.duration 
+      }));
     });
 
-    this.audio.addEventListener('volumechange', () => {
-      this.volume$.next(this.audio.volume);
+    // Track End
+    fromEvent(this.audio, 'ended').subscribe(() => {
+      this.store.dispatch(PlayerActions.stop());
+      this.store.dispatch(PlayerActions.playNext());
+    });
+
+    // Error Handling
+    fromEvent(this.audio, 'error').subscribe(() => {
+      this.store.dispatch(PlayerActions.loadTrackFailure({ 
+        error: 'Error loading audio file' 
+      }));
     });
   }
 
-  private async initAudioContext() {
-    if (!this.audioContext) {
-      this.audioContext = new AudioContext();
-      this.gainNode = this.audioContext.createGain();
-      const source = this.audioContext.createMediaElementSource(this.audio);
-      source.connect(this.gainNode);
-      this.gainNode.connect(this.audioContext.destination);
+  async loadTrack(track: Track) {
+    try {
+      this.isLoadingTrack = true;
+      const audioFile = await this.indexedDBService.getAudioFile(track.id);
+      const audioUrl = URL.createObjectURL(audioFile);
       
-      if (this.gainNode) {
-        this.gainNode.gain.value = 1;
-      }
+      // Wait for the previous audio to be properly stopped
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      
+      this.audio.src = audioUrl;
+      await this.audio.load();
+      
+      // Wait for the audio to be ready before dispatching success
+      await new Promise(resolve => {
+        this.audio.oncanplaythrough = resolve;
+      });
+      
+      this.store.dispatch(PlayerActions.loadTrackSuccess({ audioUrl }));
+      this.isLoadingTrack = false;
+    } catch (error) {
+      this.isLoadingTrack = false;
+      this.store.dispatch(PlayerActions.loadTrackFailure({ 
+        error: 'Failed to load audio file' 
+      }));
     }
   }
 
-  playTrack(track: Track): Observable<void> {
-    return from(this.indexedDB.getAudioFile(track.id)).pipe(
-      switchMap(audioFile => {
-        if (!audioFile) {
-          throw new Error('Audio file not found');
-        }
-        if (this.audio.src) {
-          URL.revokeObjectURL(this.audio.src);
-        }
-        this.audio.src = URL.createObjectURL(audioFile);
-        return from(this.audio.play());
-      })
-    );
-  }
-
-  play(): Observable<void> {
-    return from(this.audio.play());
+  async play() {
+    if (this.isLoadingTrack) {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+    }
+    try {
+      await this.audio.play();
+      this.store.dispatch(PlayerActions.play());
+    } catch (error) {
+      console.error('Play failed:', error);
+      this.store.dispatch(PlayerActions.loadTrackFailure({ 
+        error: 'Failed to play track' 
+      }));
+    }
   }
 
   pause() {
     this.audio.pause();
+    this.store.dispatch(PlayerActions.pause());
+  }
+
+  stop() {
+    this.audio.pause();
+    this.audio.currentTime = 0;
+    this.store.dispatch(PlayerActions.stop());
   }
 
   seek(time: number) {
-    if (this.audio.readyState > 0) {
-      this.audio.currentTime = time;
-    }
+    this.audio.currentTime = time;
+    this.store.dispatch(PlayerActions.setCurrentTime({ time }));
   }
 
   setVolume(volume: number) {
-    const normalizedVolume = Math.max(0, Math.min(1, volume));
-    if (this.gainNode) {
-      this.gainNode.gain.value = normalizedVolume;
-      this.volume$.next(normalizedVolume);
-    }
-    this.audio.volume = normalizedVolume;
-  }
-
-  calculateDuration(file: File): Observable<number> {
-    return new Observable(observer => {
-      const url = URL.createObjectURL(file);
-      const audio = new Audio(url);
-      audio.addEventListener('loadedmetadata', () => {
-        const duration = audio.duration;
-        URL.revokeObjectURL(url);
-        observer.next(duration);
-        observer.complete();
-      });
-    });
+    this.audio.volume = volume;
+    this.store.dispatch(PlayerActions.setVolume({ volume }));
   }
 
   cleanup() {
-    if (this.audio) {
-      this.audio.pause();
-      this.audio.currentTime = 0;
-      this.audio.src = '';
-      this.audio.load();
+    this.audio.pause();
+    this.audio.src = '';
+    if (this.audioContext.state !== 'closed') {
+      this.audioContext.close();
     }
   }
 
-  get audioElement(): HTMLAudioElement {
-    return this.audio;
+  calculateDuration(file: File): Promise<number> {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      audio.src = URL.createObjectURL(file);
+      audio.addEventListener('loadedmetadata', () => {
+        resolve(audio.duration);
+        URL.revokeObjectURL(audio.src);
+      });
+    });
   }
 } 

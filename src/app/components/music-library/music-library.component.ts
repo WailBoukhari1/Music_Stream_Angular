@@ -252,13 +252,10 @@ export class MusicLibraryComponent implements OnInit, OnDestroy {
   }
 
   // Add a new method for playing track
-  playTrack(track: Track, event?: Event): void {
-    if (event) {
-      event.stopPropagation();
-    }
-    this.router.navigate(['/track', track.id]).then(() => {
-      this.audioService.playTrack(track);
-    });
+  playTrack(track: Track): void {
+    this.store.dispatch(PlayerActions.loadTrack({ track }));
+    this.audioService.play();
+    this.router.navigate(['/track', track.id]);
   }
 
   // Add sorting functionality

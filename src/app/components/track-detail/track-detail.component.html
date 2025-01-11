@@ -1,7 +1,7 @@
 <div class="track-detail-container">
   <ng-container *ngIf="track$ | async as track; else loading">
     <div class="track-header">
-      <img [src]="track.thumbnailUrl || 'assets/default-cover.png'" [alt]="track.title" class="track-thumbnail" (error)="onImageError($event)">
+      <img [src]="track.thumbnailUrl" [alt]="track.title" class="track-thumbnail">
       <div class="track-info">
         <div class="track-meta">
           <span class="track-category">{{ track.category | titlecase }}</span>
